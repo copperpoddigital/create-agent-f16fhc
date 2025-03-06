@@ -1,0 +1,139 @@
+# Dependabot configuration file for automated dependency updates
+version: 2
+updates:
+  # Python dependencies for backend
+  - package-ecosystem: "pip"
+    directory: "/src/backend/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "security"
+    assignees:
+      - "backend-team"
+    reviewers:
+      - "security-team"
+    commit-message:
+      prefix: "deps(backend):"
+      include: "scope"
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      - dependency-type: "direct"
+    versioning-strategy: "lockfile-only"
+
+  # JavaScript/TypeScript dependencies for frontend
+  - package-ecosystem: "npm"
+    directory: "/src/web/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "security"
+    assignees:
+      - "frontend-team"
+    reviewers:
+      - "security-team"
+    commit-message:
+      prefix: "deps(web):"
+      include: "scope"
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      - dependency-type: "direct"
+
+  # Docker dependencies for backend
+  - package-ecosystem: "docker"
+    directory: "/src/backend/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    assignees:
+      - "devops-team"
+    reviewers:
+      - "security-team"
+    commit-message:
+      prefix: "deps(docker):"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  # Docker dependencies for frontend
+  - package-ecosystem: "docker"
+    directory: "/src/web/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    assignees:
+      - "devops-team"
+    reviewers:
+      - "security-team"
+    commit-message:
+      prefix: "deps(docker):"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  # Terraform dependencies for infrastructure
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "infrastructure"
+      - "security"
+    assignees:
+      - "devops-team"
+    reviewers:
+      - "security-team"
+    commit-message:
+      prefix: "deps(terraform):"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "ci-cd"
+      - "security"
+    assignees:
+      - "devops-team"
+    reviewers:
+      - "security-team"
+    commit-message:
+      prefix: "deps(actions):"
+      include: "scope"
+    open-pull-requests-limit: 5
