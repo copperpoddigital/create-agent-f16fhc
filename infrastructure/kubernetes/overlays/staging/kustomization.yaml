@@ -1,0 +1,118 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference the base configuration
+resources:
+  - ../../base
+
+# Set the namespace for all resources
+namespace: freight-price-agent-staging
+
+# Add environment-specific labels to all resources
+commonLabels:
+  environment: staging
+  managed-by: kustomize
+
+# Apply patches to specific resources
+patches:
+  - path: patches/ingress-patch.yaml
+  - path: patches/backend-deployment-patch.yaml
+  - path: patches/web-deployment-patch.yaml
+  - path: patches/db-statefulset-patch.yaml
+
+# Generate ConfigMaps with staging-specific settings
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=INFO
+      - DATA_RETENTION_DAYS=90
+      - ALLOWED_ORIGINS=https://staging.freight-price-agent.example.com
+      - REFRESH_INTERVAL_HOURS=6
+      - ENABLE_METRICS=true
+      - ENABLE_SWAGGER=true
+  - name: web-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=staging
+      - API_URL=https://api-staging.freight-price-agent.example.com
+      - DEFAULT_THEME=light
+      - ENABLE_ANALYTICS=true
+      - FEATURE_FLAGS={"enableVisualization":true,"enableExports":true,"enableNotifications":true}
+  - name: feature-flags
+    behavior: merge
+    literals:
+      - ENABLE_COMPLEX_ANALYSIS=true
+      - ENABLE_VISUALIZATIONS=true
+      - ENABLE_DATA_EXPORT=true
+      - ENABLE_BATCH_PROCESSING=true
+      - ENABLE_NOTIFICATIONS=true
+      - ENABLE_CURRENCY_CONVERSION=true
+      - ENABLE_HISTORICAL_COMPARISON=true
+      - ENABLE_REAL_TIME_UPDATES=false
+      - ENABLE_PREDICTIVE_ANALYTICS=false
+      - MAINTENANCE_MODE=false
+  - name: environment-config
+    literals:
+      - DOMAIN_NAME=staging.freight-price-agent.example.com
+      - CERT_ISSUER=letsencrypt-staging
+      - S3_BUCKET_NAME=freight-price-agent-staging
+      - AWS_REGION=us-west-2
+
+# Generate Secrets with staging-specific credentials
+secretGenerator:
+  - name: backend-secrets
+    behavior: merge
+    envs:
+      - secrets/backend-secrets.env
+  - name: web-secrets
+    behavior: merge
+    envs:
+      - secrets/web-secrets.env
+  - name: db-credentials
+    behavior: merge
+    envs:
+      - secrets/db-credentials.env
+
+# Set replica counts for staging environment
+replicas:
+  - name: backend
+    count: 2
+  - name: web
+    count: 2
+  - name: postgres
+    count: 1
+  - name: redis
+    count: 1
+
+# Configure container images for staging
+images:
+  - name: ${REGISTRY_URL}/freight-price-agent/backend
+    newName: staging-registry.example.com/freight-price-agent/backend
+    newTag: staging
+  - name: ${REGISTRY_URL}/freight-price-agent/web
+    newName: staging-registry.example.com/freight-price-agent/web
+    newTag: staging
+
+# Define variables for use in resources
+vars:
+  - name: DOMAIN_NAME
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: environment-config
+    fieldref:
+      fieldpath: data.DOMAIN_NAME
+  - name: CERT_ISSUER
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: environment-config
+    fieldref:
+      fieldpath: data.CERT_ISSUER
+
+# Apply strategic merge patches
+patchesStrategicMerge:
+  - resources/resource-limits.yaml
+  - resources/hpa.yaml
