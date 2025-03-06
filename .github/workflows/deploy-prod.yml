@@ -1,0 +1,394 @@
+name: Deploy to Production
+
+on:
+  workflow_run:
+    workflows: ["Backend CI", "Web CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    description: 'Manual trigger for production deployment'
+    inputs:
+      approval_comment:
+        description: 'Reason for manual deployment'
+        required: true
+        type: string
+
+env:
+  TF_WORKING_DIR: infrastructure/terraform/aws
+  TF_VAR_FILE: environments/prod.tfvars
+  AWS_REGION: us-west-2
+  ENVIRONMENT: prod
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  BACKEND_IMAGE: freight-price-movement-agent/backend
+  WEB_IMAGE: freight-price-movement-agent/web
+  CANARY_TRAFFIC_PERCENTAGE: 10
+
+jobs:
+  check-workflow-status:
+    name: Check Workflow Status
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Success
+        run: echo 'Prerequisite workflow succeeded, proceeding with deployment'
+    outputs:
+      proceed: 'true'
+
+  request-approval:
+    name: Request Deployment Approval
+    needs: check-workflow-status
+    runs-on: ubuntu-latest
+    if: ${{ needs.check-workflow-status.outputs.proceed == 'true' }}
+    steps:
+      - name: Create Deployment Issue
+        id: create-issue
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production Deployment Approval Request - ${context.sha.substring(0, 7)}`,
+              body: `A production deployment has been requested for commit ${context.sha}.
+
+            Please review and approve by adding the 'approved' label to this issue.
+
+            Deployment will proceed once approval is granted.`,
+              labels: ['deployment', 'production', 'needs-approval']
+            });
+            core.setOutput('issue_number', issue.data.number);
+
+      - name: Notify Approvers
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"🚨 Production deployment approval requested. Please review issue #${{ steps.create-issue.outputs.issue_number }} to approve."}' ${{ secrets.SLACK_WEBHOOK_URL }}
+    
+    outputs:
+      issue_number: ${{ steps.create-issue.outputs.issue_number }}
+
+  wait-for-approval:
+    name: Wait for Approval
+    needs: request-approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Issue to be Approved
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let approved = false;
+            let attempts = 0;
+            const maxAttempts = 720; // 1 hour with 5 second checks
+
+            while (!approved && attempts < maxAttempts) {
+              const issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ needs.request-approval.outputs.issue_number }}
+              });
+              
+              approved = issue.data.labels.some(label => label.name === 'approved');
+              
+              if (!approved) {
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+                attempts++;
+              }
+            }
+
+            if (!approved) {
+              core.setFailed('Deployment approval timed out after 1 hour');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ needs.request-approval.outputs.issue_number }},
+                body: 'Approval received. Proceeding with deployment.'
+              });
+            }
+
+      - name: Close Approval Issue
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.request-approval.outputs.issue_number }},
+              state: 'closed'
+            });
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    needs: wait-for-approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.4.x'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -var-file=${{ env.TF_VAR_FILE }} -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Extract Infrastructure Outputs
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform output -json > tf-outputs.json
+
+      - name: Upload Terraform Outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-outputs
+          path: ${{ env.TF_WORKING_DIR }}/tf-outputs.json
+
+  deploy-backend-canary:
+    name: Deploy Backend Canary
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_LISTENER_ARN=$(jq -r .backend_listener_arn.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_TARGET_GROUP_MAIN=$(jq -r .backend_target_group_main.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_TARGET_GROUP_CANARY=$(jq -r .backend_target_group_canary.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy to canary target group
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service backend-canary-service --force-new-deployment
+
+      - name: Wait for service to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services backend-canary-service
+
+      - name: Run health checks on canary deployment
+        run: CANARY_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $BACKEND_TARGET_GROUP_CANARY --query 'TargetGroups[0].TargetGroupArn' --output text) && HEALTH_COUNT=$(aws elbv2 describe-target-health --target-group-arn $CANARY_TARGET_GROUP_ARN --query 'length(TargetHealthDescriptions[?TargetHealth.State==`healthy`])') && if [ $HEALTH_COUNT -lt 1 ]; then echo 'No healthy targets found in canary target group' && exit 1; fi
+
+      - name: Update traffic weights for canary deployment
+        run: MAIN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $BACKEND_TARGET_GROUP_MAIN --query 'TargetGroups[0].TargetGroupArn' --output text) && CANARY_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $BACKEND_TARGET_GROUP_CANARY --query 'TargetGroups[0].TargetGroupArn' --output text) && aws elbv2 modify-listener --listener-arn $BACKEND_LISTENER_ARN --default-actions Type=forward,ForwardConfig='{TargetGroups=[{TargetGroupArn='$MAIN_TARGET_GROUP_ARN',Weight=100-$CANARY_TRAFFIC_PERCENTAGE},{TargetGroupArn='$CANARY_TARGET_GROUP_ARN',Weight=$CANARY_TRAFFIC_PERCENTAGE}]}'
+
+  deploy-web-canary:
+    name: Deploy Web Canary
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_LISTENER_ARN=$(jq -r .web_listener_arn.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_TARGET_GROUP_MAIN=$(jq -r .web_target_group_main.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_TARGET_GROUP_CANARY=$(jq -r .web_target_group_canary.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy to canary target group
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service web-canary-service --force-new-deployment
+
+      - name: Wait for service to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services web-canary-service
+
+      - name: Run health checks on canary deployment
+        run: CANARY_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $WEB_TARGET_GROUP_CANARY --query 'TargetGroups[0].TargetGroupArn' --output text) && HEALTH_COUNT=$(aws elbv2 describe-target-health --target-group-arn $CANARY_TARGET_GROUP_ARN --query 'length(TargetHealthDescriptions[?TargetHealth.State==`healthy`])') && if [ $HEALTH_COUNT -lt 1 ]; then echo 'No healthy targets found in canary target group' && exit 1; fi
+
+      - name: Update traffic weights for canary deployment
+        run: MAIN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $WEB_TARGET_GROUP_MAIN --query 'TargetGroups[0].TargetGroupArn' --output text) && CANARY_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $WEB_TARGET_GROUP_CANARY --query 'TargetGroups[0].TargetGroupArn' --output text) && aws elbv2 modify-listener --listener-arn $WEB_LISTENER_ARN --default-actions Type=forward,ForwardConfig='{TargetGroups=[{TargetGroupArn='$MAIN_TARGET_GROUP_ARN',Weight=100-$CANARY_TRAFFIC_PERCENTAGE},{TargetGroupArn='$CANARY_TARGET_GROUP_ARN',Weight=$CANARY_TRAFFIC_PERCENTAGE}]}'
+
+  monitor-canary:
+    name: Monitor Canary Deployment
+    needs: [deploy-backend-canary, deploy-web-canary]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set monitoring variables
+        run: echo "API_ENDPOINT=$(jq -r .api_endpoint.value tf-outputs.json)" >> $GITHUB_ENV && echo "CLOUDWATCH_ALARM_PREFIX=$(jq -r .cloudwatch_alarm_prefix.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Monitor canary for 15 minutes
+        run: echo 'Starting canary monitoring for 15 minutes...' && for i in {1..15}; do echo "Minute $i of 15" && ALARM_STATUS=$(aws cloudwatch describe-alarms --alarm-name-prefix "${CLOUDWATCH_ALARM_PREFIX}-canary" --state-value ALARM --query 'length(MetricAlarms)') && if [ "$ALARM_STATUS" -gt 0 ]; then echo 'Canary alarms detected!' && exit 1; fi && sleep 60; done && echo 'Canary monitoring completed successfully'
+
+      - name: Run smoke tests against canary
+        run: curl -f ${API_ENDPOINT}/health || exit 1
+
+  promote-to-production:
+    name: Promote to Production
+    needs: monitor-canary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_LISTENER_ARN=$(jq -r .backend_listener_arn.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_LISTENER_ARN=$(jq -r .web_listener_arn.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_TARGET_GROUP_MAIN=$(jq -r .backend_target_group_main.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_TARGET_GROUP_CANARY=$(jq -r .backend_target_group_canary.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_TARGET_GROUP_MAIN=$(jq -r .web_target_group_main.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_TARGET_GROUP_CANARY=$(jq -r .web_target_group_canary.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Update backend main service
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service backend-service --task-definition $(aws ecs describe-services --cluster $ECS_CLUSTER --services backend-canary-service --query 'services[0].taskDefinition' --output text)
+
+      - name: Update web main service
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service web-service --task-definition $(aws ecs describe-services --cluster $ECS_CLUSTER --services web-canary-service --query 'services[0].taskDefinition' --output text)
+
+      - name: Wait for services to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services backend-service web-service
+
+      - name: Switch traffic to main target groups
+        run: BACKEND_MAIN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $BACKEND_TARGET_GROUP_MAIN --query 'TargetGroups[0].TargetGroupArn' --output text) && WEB_MAIN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $WEB_TARGET_GROUP_MAIN --query 'TargetGroups[0].TargetGroupArn' --output text) && aws elbv2 modify-listener --listener-arn $BACKEND_LISTENER_ARN --default-actions Type=forward,TargetGroupArn=$BACKEND_MAIN_TARGET_GROUP_ARN && aws elbv2 modify-listener --listener-arn $WEB_LISTENER_ARN --default-actions Type=forward,TargetGroupArn=$WEB_MAIN_TARGET_GROUP_ARN
+
+  run-production-tests:
+    name: Run Production Tests
+    needs: promote-to-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set API endpoint variable
+        run: echo "API_ENDPOINT=$(jq -r .api_endpoint.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_ENDPOINT=$(jq -r .web_endpoint.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: cd src/backend && pip install -r requirements.txt
+
+      - name: Run smoke tests
+        run: cd src/backend/tests && python -m pytest test_api/test_health.py -v
+
+      - name: Run critical path tests
+        run: cd src/backend/tests && python -m pytest test_api/test_critical_paths.py -v
+
+  post-deployment-notification:
+    name: Post Deployment Notification
+    needs: [run-production-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send success notification
+        if: success()
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"✅ Freight Price Movement Agent successfully deployed to production environment"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Send failure notification
+        if: failure()
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"❌ Freight Price Movement Agent deployment to production environment failed"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback:
+    name: Rollback on Failure
+    needs: [deploy-backend-canary, deploy-web-canary, monitor-canary, promote-to-production, run-production-tests]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_LISTENER_ARN=$(jq -r .backend_listener_arn.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_LISTENER_ARN=$(jq -r .web_listener_arn.value tf-outputs.json)" >> $GITHUB_ENV && echo "BACKEND_TARGET_GROUP_MAIN=$(jq -r .backend_target_group_main.value tf-outputs.json)" >> $GITHUB_ENV && echo "WEB_TARGET_GROUP_MAIN=$(jq -r .web_target_group_main.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Rollback to previous task definition
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service backend-service --task-definition backend-service:PREVIOUS && aws ecs update-service --cluster $ECS_CLUSTER --service web-service --task-definition web-service:PREVIOUS
+
+      - name: Reset traffic to main target groups
+        run: BACKEND_MAIN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $BACKEND_TARGET_GROUP_MAIN --query 'TargetGroups[0].TargetGroupArn' --output text) && WEB_MAIN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names $WEB_TARGET_GROUP_MAIN --query 'TargetGroups[0].TargetGroupArn' --output text) && aws elbv2 modify-listener --listener-arn $BACKEND_LISTENER_ARN --default-actions Type=forward,TargetGroupArn=$BACKEND_MAIN_TARGET_GROUP_ARN && aws elbv2 modify-listener --listener-arn $WEB_LISTENER_ARN --default-actions Type=forward,TargetGroupArn=$WEB_MAIN_TARGET_GROUP_ARN
+
+      - name: Wait for services to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services backend-service web-service
+
+      - name: Send rollback notification
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ Production deployment failed - rollback completed"}' ${{ secrets.SLACK_WEBHOOK_URL }}
