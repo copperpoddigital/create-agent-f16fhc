@@ -1,0 +1,88 @@
+/* 
+ * Light Theme for Freight Price Movement Agent
+ * Provides a clean, professional color scheme optimized for standard viewing
+ * Follows WCAG 2.1 AA compliance guidelines for color contrast
+ */
+
+/* Main color variables for light theme */
+body.light-theme {
+  /* Primary colors */
+  --color-primary: #1A5276;       /* Deep Blue for primary elements */
+  --color-secondary: #148F77;     /* Teal for secondary elements */
+  --color-background: #F8F9F9;    /* Light gray for page background */
+  --color-text: #2C3E50;          /* Dark gray for primary text */
+
+  /* Semantic colors */
+  --color-accent: #E67E22;        /* Orange for alerts and important notifications */
+  --color-success: #27AE60;       /* Green for success indicators */
+  --color-warning: #F39C12;       /* Amber for warnings */
+  --color-danger: #C0392B;        /* Red for errors and critical alerts */
+
+  /* Variations for interactive states */
+  --color-primary-light: #2980B9; /* Lighter version of primary color for hover states */
+  --color-primary-dark: #154360;  /* Darker version of primary color for active states */
+  --color-secondary-light: #1ABC9C; /* Lighter version of secondary color for hover states */
+  --color-secondary-dark: #0E6655; /* Darker version of secondary color for active states */
+
+  /* UI element colors */
+  --color-border: #D5D8DC;        /* Light gray for borders and dividers */
+  --color-disabled: #95A5A6;      /* Gray for disabled elements */
+  --color-focus: rgba(26, 82, 118, 0.5); /* Semi-transparent primary color for focus states */
+
+  /* Shadow definitions for light theme */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);  /* Small shadow for subtle elevation */
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);   /* Medium shadow for cards and dropdowns */
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1); /* Large shadow for modals and popovers */
+  --shadow-focus: 0 0 0 3px rgba(26, 82, 118, 0.5); /* Focus shadow using primary color */
+}
+
+/* Default body styles using variables (when no theme class is applied) */
+body {
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+/* Text selection styling */
+.light-theme ::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Link styling */
+.light-theme a {
+  color: var(--color-primary);
+}
+
+.light-theme a:hover {
+  color: var(--color-primary-light);
+}
+
+/* Apply light theme automatically when system preference is light */
+@media (prefers-color-scheme: light) {
+  body:not(.dark-theme) {
+    color: var(--color-text);
+    background-color: var(--color-background);
+  }
+}
+
+/* Code block styling adjustments */
+.light-theme code, 
+.light-theme pre {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Card styling for light theme */
+.light-theme .card {
+  background-color: white;
+  border-color: var(--color-border);
+}
+
+/* Table styling for light theme */
+.light-theme .table {
+  color: var(--color-text);
+}
+
+.light-theme .table th, 
+.light-theme .table td {
+  border-color: var(--color-border);
+}
