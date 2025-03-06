@@ -1,0 +1,58 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env
+.venv
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+tests/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Documentation
+README.md
+docs/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Database
+*.sqlite
+*.db
+
+# Secrets and credentials
+*.pem
+*.key
+credentials.json
+
+# Specific to this project
+data/
+.dockerignore
