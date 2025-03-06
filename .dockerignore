@@ -1,0 +1,87 @@
+.git
+.github
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Environment
+.env
+.env.*
+venv/
+env/
+.venv/
+
+# IDE specific
+.idea/
+.vscode/
+*.sublime-*
+
+# Testing
+tests/
+cypress/videos/
+cypress/screenshots/
+**/*.test.ts
+**/*.test.tsx
+
+# Documentation
+docs/
+*.md
+
+# Docker
+.dockerignore
+
+# Infrastructure
+infrastructure/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.eslintcache
+.cache/
+.parcel-cache/
+
+# Configuration files not needed in production
+.eslintrc.js
+.prettierrc
+babel.config.js
+jest.config.ts
+cypress.config.ts
+
+# Database
+*.sqlite
+*.db
+
+# Secrets and credentials
+*.pem
+*.key
+credentials.json
