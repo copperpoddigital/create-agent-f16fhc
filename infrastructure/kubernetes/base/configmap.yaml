@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: config
+data:
+  APP_NAME: "Freight Price Movement Agent"
+  APP_VERSION: "${APP_VERSION}"
+  ENVIRONMENT: "${ENVIRONMENT}"
+  LOG_LEVEL: "${LOG_LEVEL}"
+  TIMEZONE: "UTC"
+  DATA_RETENTION_DAYS: "365"
+  REFRESH_INTERVAL_HOURS: "24"
+  ENABLE_METRICS: "true"
+  CORS_ORIGINS: "${CORS_ORIGINS}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: web
+    tier: frontend
+data:
+  REACT_APP_API_URL: "${API_URL}"
+  REACT_APP_ENVIRONMENT: "${ENVIRONMENT}"
+  REACT_APP_VERSION: "${APP_VERSION}"
+  REACT_APP_DEFAULT_CURRENCY: "USD"
+  REACT_APP_DEFAULT_DATE_FORMAT: "MM/DD/YYYY"
+  REACT_APP_ENABLE_ANALYTICS: "${ENABLE_ANALYTICS}"
+  REACT_APP_ENABLE_NOTIFICATIONS: "true"
+  REACT_APP_THEME: "system"
+  REACT_APP_MAX_UPLOAD_SIZE_MB: "100"
+  REACT_APP_SESSION_TIMEOUT_MINUTES: "30"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: backend
+    tier: application
+data:
+  API_VERSION: "v1"
+  WORKERS_PER_CORE: "2"
+  MAX_WORKERS: "8"
+  ANALYSIS_CACHE_TTL_MINUTES: "60"
+  REFERENCE_DATA_CACHE_TTL_HOURS: "24"
+  MAX_ANALYSIS_DATASET_SIZE: "1000000"
+  MAX_CONCURRENT_ANALYSES: "10"
+  BATCH_SIZE: "10000"
+  CURRENCY_API_URL: "https://api.exchangerate-api.com/v4/latest/"
+  S3_BUCKET_NAME: "${S3_BUCKET_NAME}"
+  S3_REGION: "${AWS_REGION}"
+  RATE_LIMIT_PER_MINUTE: "100"
+  ENABLE_SWAGGER: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feature-flags
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: config
+data:
+  ENABLE_COMPLEX_ANALYSIS: "true"
+  ENABLE_VISUALIZATIONS: "true"
+  ENABLE_DATA_EXPORT: "true"
+  ENABLE_BATCH_PROCESSING: "true"
+  ENABLE_NOTIFICATIONS: "true"
+  ENABLE_CURRENCY_CONVERSION: "true"
+  ENABLE_HISTORICAL_COMPARISON: "true"
+  ENABLE_REAL_TIME_UPDATES: "false"
+  ENABLE_PREDICTIVE_ANALYTICS: "false"
+  MAINTENANCE_MODE: "false"
