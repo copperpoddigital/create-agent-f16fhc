@@ -1,0 +1,261 @@
+/* 
+ * Chart Component Styles
+ * Defines styling for various chart components in the Freight Price Movement Agent
+ * including line charts, bar charts, trend indicators, and summary cards.
+ */
+
+/* Chart Container Styles */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: 300px;
+  margin-bottom: var(--spacing-md);
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 500px;
+}
+
+/* Chart Title and Subtitle Styles */
+.chart-title {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.chart-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* Chart Legend Styles */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-small);
+  margin-right: var(--spacing-md);
+}
+
+.chart-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--border-radius-sm);
+  margin-right: var(--spacing-xs);
+}
+
+/* Chart Type Specific Styles */
+.line-chart {
+  /* Line chart specific styles */
+}
+
+.bar-chart {
+  /* Bar chart specific styles */
+}
+
+.comparison-chart {
+  /* Comparison chart specific styles */
+}
+
+/* Trend Indicator Styles */
+.trend-indicator {
+  display: inline-flex;
+  align-items: center;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.trend-indicator-increasing {
+  color: var(--color-success);
+  background-color: rgba(39, 174, 96, 0.1);
+}
+
+.trend-indicator-decreasing {
+  color: var(--color-danger);
+  background-color: rgba(192, 57, 43, 0.1);
+}
+
+.trend-indicator-stable {
+  color: var(--color-warning);
+  background-color: rgba(243, 156, 18, 0.1);
+}
+
+.trend-indicator-icon {
+  margin-right: var(--spacing-xs);
+  font-size: 14px;
+}
+
+.trend-indicator-value {
+  margin-left: var(--spacing-xs);
+}
+
+.trend-indicator-small {
+  font-size: var(--font-size-small);
+  padding: 2px var(--spacing-xs);
+}
+
+.trend-indicator-large {
+  font-size: var(--font-size-large);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Summary Card Styles */
+.summary-card {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-background);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.summary-card-clickable {
+  cursor: pointer;
+}
+
+.summary-card-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.summary-card-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.summary-card-subtitle {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  opacity: 0.7;
+  margin-bottom: var(--spacing-sm);
+}
+
+.summary-card-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.summary-card-changes {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.summary-card-absolute-change {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+.summary-card-percentage-change {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Chart Tooltip Styles */
+.chart-tooltip {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  pointer-events: none;
+}
+
+.chart-tooltip-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.chart-tooltip-value {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+/* Chart Empty, Loading and Error States */
+.chart-no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text);
+  opacity: 0.7;
+  font-size: var(--font-size-base);
+  text-align: center;
+}
+
+.chart-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  width: 100%;
+}
+
+.chart-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  width: 100%;
+  color: var(--color-danger);
+  text-align: center;
+}
+
+/* Responsive Styles */
+@media (max-width: 767px) {
+  .chart-container { 
+    min-height: 200px; 
+  }
+  
+  .chart-title { 
+    font-size: var(--font-size-h3); 
+  }
+  
+  .chart-subtitle { 
+    font-size: var(--font-size-small); 
+  }
+  
+  .summary-card-value { 
+    font-size: var(--font-size-h3); 
+  }
+  
+  .summary-card-changes { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: var(--spacing-xs); 
+  }
+  
+  .chart-legend { 
+    flex-direction: column; 
+    align-items: center; 
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  .chart-container { 
+    min-height: 250px; 
+  }
+}
