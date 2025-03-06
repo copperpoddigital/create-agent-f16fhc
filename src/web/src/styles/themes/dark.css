@@ -1,0 +1,87 @@
+/**
+ * Dark Theme - Freight Price Movement Agent
+ * 
+ * This file defines the dark theme color scheme for the application.
+ * It provides a comfortable visual experience in low-light environments
+ * while maintaining brand consistency and accessibility standards.
+ * 
+ * The color scheme follows WCAG 2.1 AA compliance for contrast ratios
+ * while implementing the brand colors defined in the technical specification.
+ */
+
+/* Base color variables for dark theme */
+body.dark-theme {
+  /* Primary colors */
+  --color-primary: #2980B9; /* Lighter blue for primary elements in dark mode for better visibility */
+  --color-secondary: #1ABC9C; /* Lighter teal for secondary elements in dark mode */
+  --color-background: #1E272E; /* Dark gray for page background */
+  --color-text: #ECF0F1; /* Light gray for primary text */
+  
+  /* Semantic colors */
+  --color-accent: #F39C12; /* Amber for alerts and important notifications */
+  --color-success: #2ECC71; /* Brighter green for success indicators */
+  --color-warning: #F1C40F; /* Bright yellow for warnings */
+  --color-danger: #E74C3C; /* Bright red for errors and critical alerts */
+  
+  /* Color variations */
+  --color-primary-light: #3498DB; /* Lighter version of primary color for hover states */
+  --color-primary-dark: #1F618D; /* Darker version of primary color for active states */
+  --color-secondary-light: #48C9B0; /* Lighter version of secondary color for hover states */
+  --color-secondary-dark: #16A085; /* Darker version of secondary color for active states */
+  
+  /* UI colors */
+  --color-border: #34495E; /* Dark blue-gray for borders and dividers */
+  --color-disabled: #7F8C8D; /* Medium gray for disabled elements */
+  --color-focus: rgba(41, 128, 185, 0.5); /* Semi-transparent primary color for focus states */
+}
+
+/* Shadow variables for dark theme */
+body.dark-theme {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2); /* Small shadow with increased opacity for dark mode */
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3); /* Medium shadow with increased opacity for dark mode */
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4); /* Large shadow with increased opacity for dark mode */
+  --shadow-focus: 0 0 0 3px rgba(41, 128, 185, 0.5); /* Focus shadow using primary color */
+}
+
+/* Text selection styling */
+.dark-theme ::selection {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* Link styling */
+.dark-theme a {
+  color: var(--color-primary-light);
+}
+
+.dark-theme a:hover {
+  color: var(--color-primary);
+}
+
+/* System preference detection */
+@media (prefers-color-scheme: dark) {
+  body:not(.light-theme) {
+    color: var(--color-text);
+    background-color: var(--color-background);
+  }
+}
+
+/* Code block styling */
+.dark-theme code, .dark-theme pre {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Card styling */
+.dark-theme .card {
+  background-color: #2C3E50;
+  border-color: var(--color-border);
+}
+
+/* Table styling */
+.dark-theme .table {
+  color: var(--color-text);
+}
+
+.dark-theme .table th, .dark-theme .table td {
+  border-color: var(--color-border);
+}
