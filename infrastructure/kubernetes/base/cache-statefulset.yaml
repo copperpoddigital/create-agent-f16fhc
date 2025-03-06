@@ -1,0 +1,155 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: cache
+    tier: data
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: freight-price-movement-agent
+      component: cache
+  template:
+    metadata:
+      labels:
+        app: freight-price-movement-agent
+        component: cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 6379
+          name: redis
+        command: ["redis-server"]
+        args: ["/etc/redis/redis.conf"]
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis/redis.conf
+          subPath: redis.conf
+        livenessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
+      securityContext:
+        fsGroup: 999
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 20Gi
+  updateStrategy:
+    type: RollingUpdate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: cache
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: freight-price-movement-agent
+    component: cache
+  clusterIP: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: cache
+data:
+  redis.conf: |
+    # Redis configuration for Freight Price Movement Agent
+
+    # Network settings
+    bind 0.0.0.0
+    port 6379
+    protected-mode yes
+    requirepass ${REDIS_PASSWORD}
+
+    # Memory settings
+    maxmemory 1536mb
+    maxmemory-policy volatile-lru
+
+    # Persistence settings
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    dir /data
+
+    # Performance settings
+    tcp-keepalive 300
+    timeout 0
+    tcp-backlog 511
+
+    # Logging settings
+    loglevel notice
+    logfile ""
+
+    # Advanced settings
+    lazy-free-lazy-eviction yes
+    lazy-free-lazy-expire yes
+    lazy-free-lazy-server-del yes
+    lazy-free-replica-lazy-flush yes
+
+    # Notification settings
+    notify-keyspace-events Ex
+
+    # Client settings
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 256mb 64mb 60
+    client-output-buffer-limit pubsub 32mb 8mb 60
