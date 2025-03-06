@@ -1,0 +1,227 @@
+[
+  {
+    "id": "rep-001",
+    "name": "Q1 Ocean Rates",
+    "description": "Quarterly analysis of ocean freight rates across major APAC-US routes",
+    "type": "STANDARD",
+    "status": "ACTIVE",
+    "analysis_id": "a-001",
+    "analysis_result": {
+      "id": "ar-001",
+      "name": "Q2 Ocean Freight Analysis",
+      "time_period": {
+        "id": "tp-001",
+        "name": "Q2 2023",
+        "start_date": "2023-04-01",
+        "end_date": "2023-06-30",
+        "granularity": "WEEKLY"
+      },
+      "price_change": {
+        "absolute_change": 245.0,
+        "percentage_change": 5.95,
+        "trend_direction": "INCREASING"
+      }
+    },
+    "output_format": "JSON",
+    "include_visualization": true,
+    "created_by": "admin",
+    "created_at": "2023-04-01T10:30:00Z",
+    "updated_at": "2023-04-01T10:30:00Z",
+    "last_run_at": "2023-07-05T08:15:00Z"
+  },
+  {
+    "id": "rep-002",
+    "name": "APAC Air Cargo",
+    "description": "Analysis of air cargo rates from Asia to North America",
+    "type": "STANDARD",
+    "status": "ACTIVE",
+    "analysis_id": "a-002",
+    "analysis_result": {
+      "id": "ar-002",
+      "name": "APAC Air Cargo Analysis",
+      "time_period": {
+        "id": "tp-002",
+        "name": "Last 30 Days",
+        "start_date": "2023-06-01",
+        "end_date": "2023-06-30",
+        "granularity": "DAILY"
+      },
+      "price_change": {
+        "absolute_change": -100.0,
+        "percentage_change": -1.46,
+        "trend_direction": "DECREASING"
+      }
+    },
+    "output_format": "CSV",
+    "include_visualization": true,
+    "created_by": "analyst",
+    "created_at": "2023-03-15T14:45:00Z",
+    "updated_at": "2023-06-30T09:20:00Z",
+    "last_run_at": "2023-07-04T11:30:00Z"
+  },
+  {
+    "id": "rep-003",
+    "name": "EU Road Freight",
+    "description": "European road freight rate analysis for Q1 2023",
+    "type": "STANDARD",
+    "status": "ACTIVE",
+    "analysis_id": "a-003",
+    "analysis_result": {
+      "id": "ar-003",
+      "name": "EU Road Freight Trends",
+      "time_period": {
+        "id": "tp-003",
+        "name": "Q1 2023",
+        "start_date": "2023-01-01",
+        "end_date": "2023-03-31",
+        "granularity": "MONTHLY"
+      },
+      "price_change": {
+        "absolute_change": 15.0,
+        "percentage_change": 0.81,
+        "trend_direction": "STABLE"
+      }
+    },
+    "output_format": "TEXT",
+    "include_visualization": false,
+    "created_by": "admin",
+    "created_at": "2023-02-28T09:15:00Z",
+    "updated_at": "2023-04-02T14:30:00Z",
+    "last_run_at": "2023-06-28T16:45:00Z"
+  },
+  {
+    "id": "rep-004",
+    "name": "US Rail vs Road",
+    "description": "Comparative analysis of rail and road freight costs in the US",
+    "type": "CUSTOM",
+    "status": "ACTIVE",
+    "analysis_id": "a-004",
+    "analysis_result": {
+      "id": "ar-004",
+      "name": "US Rail vs Road Comparison",
+      "time_period": {
+        "id": "tp-004",
+        "name": "H2 2022",
+        "start_date": "2022-07-01",
+        "end_date": "2022-12-31",
+        "granularity": "MONTHLY"
+      },
+      "price_change": {
+        "absolute_change": 70.0,
+        "percentage_change": 3.11,
+        "trend_direction": "INCREASING"
+      }
+    },
+    "output_format": "JSON",
+    "include_visualization": true,
+    "created_by": "analyst",
+    "created_at": "2023-01-10T13:20:00Z",
+    "updated_at": "2023-01-15T10:45:00Z",
+    "last_run_at": "2023-06-15T09:30:00Z"
+  },
+  {
+    "id": "rep-005",
+    "name": "Express Ocean Services",
+    "description": "Analysis of premium express ocean freight services",
+    "type": "STANDARD",
+    "status": "ARCHIVED",
+    "analysis_id": "a-005",
+    "analysis_result": {
+      "id": "ar-005",
+      "name": "Custom Interval Analysis",
+      "time_period": {
+        "id": "tp-005",
+        "name": "Custom 3-Day Analysis",
+        "start_date": "2023-05-01",
+        "end_date": "2023-05-31",
+        "granularity": "CUSTOM"
+      },
+      "price_change": {
+        "absolute_change": -40.0,
+        "percentage_change": -0.78,
+        "trend_direction": "STABLE"
+      }
+    },
+    "output_format": "CSV",
+    "include_visualization": true,
+    "created_by": "admin",
+    "created_at": "2023-05-05T11:30:00Z",
+    "updated_at": "2023-06-10T14:15:00Z",
+    "last_run_at": "2023-06-01T08:45:00Z"
+  },
+  {
+    "id": "rep-006",
+    "name": "July Market Overview",
+    "description": "Monthly overview of freight market rates",
+    "type": "TEMPLATE",
+    "status": "DRAFT",
+    "analysis_id": "a-006",
+    "analysis_result": null,
+    "output_format": "JSON",
+    "include_visualization": true,
+    "created_by": "analyst",
+    "created_at": "2023-07-01T09:00:00Z",
+    "updated_at": "2023-07-01T09:00:00Z",
+    "last_run_at": null
+  },
+  {
+    "id": "rep-007",
+    "name": "Annual Rate Review",
+    "description": "Comprehensive review of freight rates for the previous year",
+    "type": "STANDARD",
+    "status": "ACTIVE",
+    "analysis_id": "a-007",
+    "analysis_result": null,
+    "output_format": "CSV",
+    "include_visualization": true,
+    "created_by": "admin",
+    "created_at": "2023-01-05T10:00:00Z",
+    "updated_at": "2023-01-05T10:00:00Z",
+    "last_run_at": null
+  },
+  {
+    "id": "rep-008",
+    "name": "Weekly Rate Snapshot",
+    "description": "Weekly snapshot of key freight rates for executive review",
+    "type": "TEMPLATE",
+    "status": "ACTIVE",
+    "analysis_id": null,
+    "analysis_result": null,
+    "output_format": "TEXT",
+    "include_visualization": false,
+    "created_by": "admin",
+    "created_at": "2023-06-15T14:30:00Z",
+    "updated_at": "2023-06-15T14:30:00Z",
+    "last_run_at": null
+  },
+  {
+    "id": "rep-009",
+    "name": "Carrier Performance",
+    "description": "Analysis of carrier rate performance over time",
+    "type": "CUSTOM",
+    "status": "DRAFT",
+    "analysis_id": null,
+    "analysis_result": null,
+    "output_format": "JSON",
+    "include_visualization": true,
+    "created_by": "analyst",
+    "created_at": "2023-07-03T11:45:00Z",
+    "updated_at": "2023-07-03T11:45:00Z",
+    "last_run_at": null
+  },
+  {
+    "id": "rep-010",
+    "name": "Regional Rate Comparison",
+    "description": "Comparative analysis of freight rates across different regions",
+    "type": "STANDARD",
+    "status": "ACTIVE",
+    "analysis_id": null,
+    "analysis_result": null,
+    "output_format": "CSV",
+    "include_visualization": true,
+    "created_by": "admin",
+    "created_at": "2023-05-20T09:30:00Z",
+    "updated_at": "2023-05-20T09:30:00Z",
+    "last_run_at": "2023-06-20T10:15:00Z"
+  }
+]
