@@ -1,0 +1,93 @@
+.git/
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env
+.venv
+
+# Node.js specific
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+
+# Testing and coverage
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+coverage/
+.nyc_output/
+cypress/videos/
+cypress/screenshots/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs/
+*.log
+
+# Local data
+data/
+
+# Docker
+.docker/
+
+# Temporary files
+tmp/
+temp/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SQLite database files
+*.sqlite
+*.sqlite3
+
+# Local configuration
+local_settings.py
+
+# OS specific
+.DS_Store
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.eslintcache
+.cache/
+.parcel-cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Production build
+/build
+/dist
