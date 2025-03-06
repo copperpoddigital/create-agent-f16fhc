@@ -1,0 +1,202 @@
+@import '../../styles/variables.css';
+
+/* Text Color Utilities */
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+.text-secondary {
+  color: var(--color-secondary) !important;
+}
+
+.text-accent {
+  color: var(--color-accent) !important;
+}
+
+.text-success {
+  color: var(--color-success) !important;
+}
+
+.text-warning {
+  color: var(--color-warning) !important;
+}
+
+.text-danger {
+  color: var(--color-danger) !important;
+}
+
+.text-muted {
+  color: var(--color-disabled) !important;
+}
+
+.text-light {
+  color: white !important;
+}
+
+.text-dark {
+  color: var(--color-text) !important;
+}
+
+/* Background Color Utilities */
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary) !important;
+}
+
+.bg-accent {
+  background-color: var(--color-accent) !important;
+}
+
+.bg-success {
+  background-color: var(--color-success) !important;
+}
+
+.bg-warning {
+  background-color: var(--color-warning) !important;
+}
+
+.bg-danger {
+  background-color: var(--color-danger) !important;
+}
+
+.bg-light {
+  background-color: var(--color-background) !important;
+}
+
+.bg-white {
+  background-color: white !important;
+}
+
+.bg-dark {
+  background-color: var(--color-text) !important;
+}
+
+.bg-transparent {
+  background-color: transparent !important;
+}
+
+/* Border Color Utilities */
+.border-primary {
+  border-color: var(--color-primary) !important;
+}
+
+.border-secondary {
+  border-color: var(--color-secondary) !important;
+}
+
+.border-accent {
+  border-color: var(--color-accent) !important;
+}
+
+.border-success {
+  border-color: var(--color-success) !important;
+}
+
+.border-warning {
+  border-color: var(--color-warning) !important;
+}
+
+.border-danger {
+  border-color: var(--color-danger) !important;
+}
+
+.border-light {
+  border-color: var(--color-border) !important;
+}
+
+.border-dark {
+  border-color: var(--color-text) !important;
+}
+
+/* Hover State Utilities */
+.hover-bg-primary:hover {
+  background-color: var(--color-primary) !important;
+}
+
+.hover-bg-secondary:hover {
+  background-color: var(--color-secondary) !important;
+}
+
+.hover-text-primary:hover {
+  color: var(--color-primary) !important;
+}
+
+.hover-text-secondary:hover {
+  color: var(--color-secondary) !important;
+}
+
+.hover-border-primary:hover {
+  border-color: var(--color-primary) !important;
+}
+
+.hover-border-secondary:hover {
+  border-color: var(--color-secondary) !important;
+}
+
+/* Color Variations */
+.bg-primary-light {
+  background-color: var(--color-primary-light) !important;
+}
+
+.bg-primary-dark {
+  background-color: var(--color-primary-dark) !important;
+}
+
+.bg-secondary-light {
+  background-color: var(--color-secondary-light) !important;
+}
+
+.bg-secondary-dark {
+  background-color: var(--color-secondary-dark) !important;
+}
+
+.text-primary-light {
+  color: var(--color-primary-light) !important;
+}
+
+.text-primary-dark {
+  color: var(--color-primary-dark) !important;
+}
+
+.text-secondary-light {
+  color: var(--color-secondary-light) !important;
+}
+
+.text-secondary-dark {
+  color: var(--color-secondary-dark) !important;
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-primary-light)) !important;
+}
+
+.bg-gradient-secondary {
+  background-image: linear-gradient(to right, var(--color-secondary), var(--color-secondary-light)) !important;
+}
+
+/* Focus Styles */
+.focus-primary:focus {
+  box-shadow: 0 0 0 0.2rem var(--color-focus) !important;
+  outline: none !important;
+}
+
+/* Opacity Utilities */
+.opacity-75 {
+  opacity: 0.75 !important;
+}
+
+.opacity-50 {
+  opacity: 0.5 !important;
+}
+
+.opacity-25 {
+  opacity: 0.25 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Dark mode color adjustments are handled by theme classes */
+}
