@@ -1,0 +1,116 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to the base resources
+resources:
+  - ../../base
+
+# Development-specific namespace
+namespace: freight-price-agent-dev
+
+# Common labels for all resources
+commonLabels:
+  environment: development
+  managed-by: kustomize
+
+# Patches to override specific resources
+patches:
+  - path: patches/ingress-patch.yaml
+  - path: patches/backend-deployment-patch.yaml
+  - path: patches/web-deployment-patch.yaml
+
+# ConfigMap generators for development environment
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - DATA_RETENTION_DAYS=30
+      - ALLOWED_ORIGINS=*
+      - REFRESH_INTERVAL_HOURS=1
+      - ENABLE_METRICS=true
+      - ENABLE_SWAGGER=true
+  - name: web-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=development
+      - API_URL=http://localhost:8000/api
+      - DEFAULT_THEME=light
+      - ENABLE_ANALYTICS=false
+      - FEATURE_FLAGS={"enableVisualization":true,"enableExports":true,"enableNotifications":true}
+  - name: feature-flags
+    behavior: merge
+    literals:
+      - ENABLE_COMPLEX_ANALYSIS=true
+      - ENABLE_VISUALIZATIONS=true
+      - ENABLE_DATA_EXPORT=true
+      - ENABLE_BATCH_PROCESSING=true
+      - ENABLE_NOTIFICATIONS=true
+      - ENABLE_CURRENCY_CONVERSION=true
+      - ENABLE_HISTORICAL_COMPARISON=true
+      - ENABLE_REAL_TIME_UPDATES=false
+      - ENABLE_PREDICTIVE_ANALYTICS=false
+      - MAINTENANCE_MODE=false
+  - name: environment-config
+    literals:
+      - DOMAIN_NAME=dev.freight-price-agent.example.com
+      - CERT_ISSUER=letsencrypt-staging
+      - S3_BUCKET_NAME=freight-price-agent-dev
+      - AWS_REGION=us-west-2
+
+# Secret generators for sensitive data
+secretGenerator:
+  - name: backend-secrets
+    behavior: merge
+    envs:
+      - secrets/backend-secrets.env
+  - name: web-secrets
+    behavior: merge
+    envs:
+      - secrets/web-secrets.env
+  - name: db-credentials
+    behavior: merge
+    envs:
+      - secrets/db-credentials.env
+
+# Development-specific replica counts (reduced for dev environment)
+replicas:
+  - name: backend
+    count: 1
+  - name: web
+    count: 1
+  - name: postgres
+    count: 1
+  - name: redis
+    count: 1
+
+# Image configurations for development
+images:
+  - name: ${REGISTRY_URL}/freight-price-agent/backend
+    newName: dev-registry.example.com/freight-price-agent/backend
+    newTag: latest
+  - name: ${REGISTRY_URL}/freight-price-agent/web
+    newName: dev-registry.example.com/freight-price-agent/web
+    newTag: latest
+
+# Variables for use in resources
+vars:
+  - name: DOMAIN_NAME
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: environment-config
+    fieldref:
+      fieldpath: data.DOMAIN_NAME
+  - name: CERT_ISSUER
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: environment-config
+    fieldref:
+      fieldpath: data.CERT_ISSUER
+
+# Strategic merge patches for resource limits
+patchesStrategicMerge:
+  - resources/resource-limits.yaml
