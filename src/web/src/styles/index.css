@@ -1,0 +1,80 @@
+/**
+ * Main CSS Entry Point - Freight Price Movement Agent
+ * 
+ * This file imports and organizes all CSS modules needed for the application
+ * including variables, themes, global styles, utilities, and component-specific styles.
+ * The structure supports the design principles of clarity, efficiency, consistency,
+ * responsiveness, and accessibility as specified in the technical requirements.
+ */
+
+/* Core CSS Imports */
+@import './variables.css';
+@import './global.css';
+
+/* Theme Definitions */
+@import './themes/light.css';
+@import './themes/dark.css';
+
+/* Utility Classes */
+@import './utils/colors.css';
+@import './utils/spacing.css';
+@import './utils/typography.css';
+
+/* Component Styles */
+@import './components/buttons.css';
+@import './components/cards.css';
+@import './components/charts.css';
+@import './components/forms.css';
+@import './components/tables.css';
+
+:root {
+  /* CSS variables are defined in variables.css */
+}
+
+/* Theme initialization */
+body {
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+/* Apply system preference by default */
+@media (prefers-color-scheme: dark) {
+  body:not(.light-theme) {
+    /* Dark theme styles applied via dark.css */
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  body:not(.dark-theme) {
+    /* Light theme styles applied via light.css */
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background-color: white;
+    color: black;
+  }
+  
+  a {
+    color: black;
+    text-decoration: underline;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .page-break {
+    page-break-before: always;
+  }
+  
+  table {
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+  }
+}
