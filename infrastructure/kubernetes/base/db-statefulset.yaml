@@ -1,0 +1,278 @@
+---
+# PostgreSQL Service (Headless)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: database
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: freight-price-movement-agent
+    component: database
+  clusterIP: None
+
+---
+# PostgreSQL Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: database
+data:
+  postgresql.conf: |
+    # PostgreSQL configuration for Freight Price Movement Agent
+
+    # Connection settings
+    listen_addresses = '*'
+    max_connections = 100
+
+    # Memory settings
+    shared_buffers = 1GB
+    work_mem = 64MB
+    maintenance_work_mem = 256MB
+    effective_cache_size = 3GB
+
+    # Write-ahead log settings
+    wal_level = replica
+    max_wal_size = 1GB
+    min_wal_size = 80MB
+    wal_buffers = 16MB
+
+    # Query tuning
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+
+    # TimescaleDB settings
+    timescaledb.max_background_workers = 8
+
+    # Logging settings
+    log_destination = 'stderr'
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_truncate_on_rotation = on
+    log_rotation_age = 1d
+    log_rotation_size = 100MB
+    log_min_duration_statement = 1000
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    log_temp_files = 0
+
+    # Autovacuum settings
+    autovacuum = on
+    autovacuum_vacuum_scale_factor = 0.1
+    autovacuum_analyze_scale_factor = 0.05
+
+    # Performance settings
+    max_parallel_workers_per_gather = 4
+    max_parallel_workers = 8
+    max_worker_processes = 16
+
+---
+# PostgreSQL Initialization Scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: database
+data:
+  01-init-timescaledb.sh: |
+    #!/bin/bash
+    set -e
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        
+        -- Set up schema if not exists
+        CREATE SCHEMA IF NOT EXISTS freight_price_agent;
+        
+        -- Set search path
+        ALTER DATABASE $POSTGRES_DB SET search_path TO freight_price_agent, public;
+        
+        -- Create role for application
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_user') THEN
+                CREATE ROLE app_user WITH LOGIN PASSWORD '${APP_PASSWORD}';
+            END IF;
+        END
+        $$;
+        
+        -- Grant privileges
+        GRANT ALL PRIVILEGES ON SCHEMA freight_price_agent TO app_user;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA freight_price_agent GRANT ALL PRIVILEGES ON TABLES TO app_user;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA freight_price_agent GRANT ALL PRIVILEGES ON SEQUENCES TO app_user;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA freight_price_agent GRANT ALL PRIVILEGES ON FUNCTIONS TO app_user;
+        
+        -- Create TimescaleDB hypertable helper function
+        CREATE OR REPLACE FUNCTION create_hypertable_if_not_exists(
+            table_name TEXT,
+            time_column_name TEXT,
+            chunk_time_interval INTERVAL DEFAULT INTERVAL '7 days',
+            create_default_indexes BOOLEAN DEFAULT TRUE
+        ) RETURNS VOID AS $$
+        DECLARE
+            is_hypertable BOOLEAN;
+        BEGIN
+            SELECT EXISTS(
+                SELECT 1 FROM timescaledb_information.hypertables 
+                WHERE hypertable_name = table_name
+            ) INTO is_hypertable;
+            
+            IF NOT is_hypertable THEN
+                PERFORM create_hypertable(table_name, time_column_name, 
+                                         chunk_time_interval => chunk_time_interval, 
+                                         create_default_indexes => create_default_indexes,
+                                         if_not_exists => TRUE);
+                RAISE NOTICE 'Created hypertable for %', table_name;
+            ELSE
+                RAISE NOTICE 'Hypertable for % already exists', table_name;
+            END IF;
+        END;
+        $$ LANGUAGE plpgsql;
+        
+        -- Create audit logging function
+        CREATE OR REPLACE FUNCTION freight_price_agent.audit_log_function()
+        RETURNS TRIGGER AS $$
+        DECLARE
+            audit_row jsonb;
+        BEGIN
+            IF (TG_OP = 'DELETE') THEN
+                audit_row = to_jsonb(OLD);
+                INSERT INTO freight_price_agent.audit_log(table_name, operation, record_id, old_data, changed_by)
+                VALUES (TG_TABLE_NAME, TG_OP, OLD.id, audit_row, current_user);
+                RETURN OLD;
+            ELSIF (TG_OP = 'UPDATE') THEN
+                audit_row = to_jsonb(NEW);
+                INSERT INTO freight_price_agent.audit_log(table_name, operation, record_id, old_data, new_data, changed_by)
+                VALUES (TG_TABLE_NAME, TG_OP, NEW.id, to_jsonb(OLD), audit_row, current_user);
+                RETURN NEW;
+            ELSIF (TG_OP = 'INSERT') THEN
+                audit_row = to_jsonb(NEW);
+                INSERT INTO freight_price_agent.audit_log(table_name, operation, record_id, new_data, changed_by)
+                VALUES (TG_TABLE_NAME, TG_OP, NEW.id, audit_row, current_user);
+                RETURN NEW;
+            END IF;
+            RETURN NULL;
+        END;
+        $$ LANGUAGE plpgsql;
+    EOSQL
+
+---
+# PostgreSQL StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: freight-price-agent
+  labels:
+    app: freight-price-movement-agent
+    component: database
+    tier: data
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: freight-price-movement-agent
+      component: database
+  template:
+    metadata:
+      labels:
+        app: freight-price-movement-agent
+        component: database
+    spec:
+      containers:
+      - name: postgres
+        image: timescale/timescaledb:2.8.1-pg13
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          value: freight_price_agent
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            cpu: "1000m"
+            memory: "2Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql/postgresql.conf
+          subPath: postgresql.conf
+        - name: postgres-init
+          mountPath: /docker-entrypoint-initdb.d
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: postgres-config
+        configMap:
+          name: postgres-config
+      - name: postgres-init
+        configMap:
+          name: postgres-init
+      securityContext:
+        fsGroup: 999
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 50Gi
+  updateStrategy:
+    type: RollingUpdate
