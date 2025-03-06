@@ -1,0 +1,12 @@
+# This file provides instructions to web crawlers about which parts of the site they should or shouldn't access.
+
+User-agent: *
+Allow: /
+
+# Prevent crawlers from accessing sensitive areas
+Disallow: /api/
+Disallow: /auth/
+Disallow: /settings/
+Disallow: /analysis/
+Disallow: /reports/
+Disallow: /data-sources/
