@@ -1,0 +1,125 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to base resources
+resources:
+  - ../../base
+
+# Production namespace
+namespace: freight-price-agent
+
+# Common labels for all resources in production
+commonLabels:
+  environment: production
+  managed-by: kustomize
+
+# Patches for specific resources
+patches:
+  - path: patches/ingress-patch.yaml
+  - path: patches/backend-deployment-patch.yaml
+  - path: patches/web-deployment-patch.yaml
+  - path: patches/db-statefulset-patch.yaml
+  - path: patches/cache-statefulset-patch.yaml
+
+# ConfigMap generators for environment-specific configuration
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - DATA_RETENTION_DAYS=365
+      - ALLOWED_ORIGINS=https://freight-price-agent.example.com
+      - REFRESH_INTERVAL_HOURS=24
+      - ENABLE_METRICS=true
+      - ENABLE_SWAGGER=false
+      - RATE_LIMIT_PER_MINUTE=100
+      - MAX_ANALYSIS_DATASET_SIZE=1000000
+      - MAX_CONCURRENT_ANALYSES=20
+  - name: web-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=production
+      - API_URL=https://api.freight-price-agent.example.com
+      - DEFAULT_THEME=system
+      - ENABLE_ANALYTICS=true
+      - FEATURE_FLAGS={"enableVisualization":true,"enableExports":true,"enableNotifications":true}
+      - REACT_APP_SESSION_TIMEOUT_MINUTES=30
+  - name: feature-flags
+    behavior: merge
+    literals:
+      - ENABLE_COMPLEX_ANALYSIS=true
+      - ENABLE_VISUALIZATIONS=true
+      - ENABLE_DATA_EXPORT=true
+      - ENABLE_BATCH_PROCESSING=true
+      - ENABLE_NOTIFICATIONS=true
+      - ENABLE_CURRENCY_CONVERSION=true
+      - ENABLE_HISTORICAL_COMPARISON=true
+      - ENABLE_REAL_TIME_UPDATES=false
+      - ENABLE_PREDICTIVE_ANALYTICS=false
+      - MAINTENANCE_MODE=false
+  - name: environment-config
+    literals:
+      - DOMAIN_NAME=freight-price-agent.example.com
+      - CERT_ISSUER=letsencrypt-prod
+      - S3_BUCKET_NAME=freight-price-agent-prod
+      - AWS_REGION=us-west-2
+
+# Secret generators for sensitive information
+secretGenerator:
+  - name: backend-secrets
+    behavior: merge
+    envs:
+      - secrets/backend-secrets.env
+  - name: web-secrets
+    behavior: merge
+    envs:
+      - secrets/web-secrets.env
+  - name: db-credentials
+    behavior: merge
+    envs:
+      - secrets/db-credentials.env
+
+# Replica counts for high availability
+replicas:
+  - name: backend
+    count: 4
+  - name: web
+    count: 4
+  - name: postgres
+    count: 1  # Primary database with replica handled by StatefulSet
+  - name: redis
+    count: 2  # Redis with master-replica configuration
+
+# Container images for production
+images:
+  - name: ${REGISTRY_URL}/freight-price-agent/backend
+    newName: registry.example.com/freight-price-agent/backend
+    newTag: stable
+  - name: ${REGISTRY_URL}/freight-price-agent/web
+    newName: registry.example.com/freight-price-agent/web
+    newTag: stable
+
+# Variables for dynamic configuration
+vars:
+  - name: DOMAIN_NAME
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: environment-config
+    fieldref:
+      fieldpath: data.DOMAIN_NAME
+  - name: CERT_ISSUER
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: environment-config
+    fieldref:
+      fieldpath: data.CERT_ISSUER
+
+# Strategic merge patches for additional resources
+patchesStrategicMerge:
+  - resources/resource-limits.yaml
+  - resources/hpa.yaml
+  - resources/pdb.yaml
+  - resources/network-policies.yaml
