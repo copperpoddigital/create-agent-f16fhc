@@ -1,0 +1,63 @@
+# Each line contains a file pattern followed by one or more owners who will be
+# requested for review when a pull request modifies files matching that pattern.
+# The last matching pattern takes precedence.
+
+# Default ownership for all files in the repository
+*                                       @project-leads
+
+# Backend Python application code ownership
+src/backend/                            @backend-team
+
+# API endpoints and controllers
+src/backend/api/                        @api-team @backend-team
+
+# Core analysis engine with price movement calculations
+src/backend/services/analysis_engine.py @data-science-team @backend-team
+
+# Database models and schemas
+src/backend/models/                     @data-team @backend-team
+
+# External system connectors for TMS, ERP, etc.
+src/backend/connectors/                 @integration-team @backend-team
+
+# Web frontend application code
+src/web/                                @frontend-team
+
+# Data visualization components
+src/web/src/components/charts/          @data-visualization-team @frontend-team
+
+# Infrastructure as code, deployment configurations
+infrastructure/                          @devops-team
+
+# Terraform configurations for cloud infrastructure
+infrastructure/terraform/                @cloud-team @devops-team
+
+# Kubernetes deployment configurations
+infrastructure/kubernetes/               @kubernetes-team @devops-team
+
+# CI/CD pipeline configurations
+.github/workflows/                       @ci-cd-team @devops-team
+
+# Project documentation
+docs/                                    @documentation-team
+
+# Markdown documentation files
+*.md                                     @documentation-team
+
+# Backend test files
+src/backend/tests/                       @qa-team @backend-team
+
+# Frontend test files
+src/web/tests/                           @qa-team @frontend-team
+
+# End-to-end test files
+src/web/cypress/                         @qa-team @frontend-team
+
+# Database migration files
+src/backend/migrations/                  @database-team @backend-team
+
+# Security-related code
+src/backend/core/security.py             @security-team @backend-team
+
+# Logging and monitoring code
+src/backend/core/logging.py              @observability-team @backend-team
