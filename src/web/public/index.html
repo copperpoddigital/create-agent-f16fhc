@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#1A5276">
+    <meta name="description" content="Freight Price Movement Agent - Track, analyze, and report changes in freight charges over specified time periods">
+    
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico">
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.svg">
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+    
+    <title>Freight Price Movement Agent</title>
+    <style>
+        /* Initial loading styles */
+        .app-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Open Sans', sans-serif;
+            color: #2C3E50;
+            background-color: #F8F9F9;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #F3F3F3;
+            border-top: 5px solid #1A5276;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <noscript>
+        <div style="text-align: center; padding: 20px; font-family: 'Open Sans', sans-serif; color: #C0392B;">
+            <h2>JavaScript Required</h2>
+            <p>You need to enable JavaScript to run the Freight Price Movement Agent application.</p>
+        </div>
+    </noscript>
+    
+    <div id="root">
+        <div class="app-loading" role="status" aria-live="polite">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p class="loading-text">Loading Freight Price Movement Agent...</p>
+        </div>
+    </div>
+
+    <!-- Environment variables for the application -->
+    <script type="text/javascript">
+        window.env = {
+            // Environment variables will be injected here during build
+            API_BASE_URL: '%REACT_APP_API_BASE_URL%',
+            VERSION: '%REACT_APP_VERSION%',
+            BUILD_DATE: '%REACT_APP_BUILD_DATE%'
+        };
+    </script>
+</body>
+</html>
