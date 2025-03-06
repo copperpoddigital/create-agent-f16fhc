@@ -1,0 +1,201 @@
+version: '3.8'
+
+services:
+  api:
+    description: Main API service for the Freight Price Movement Agent
+    build:
+      context: ../../src/backend
+      dockerfile: Dockerfile
+      target: build
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ../../src/backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      ENV: development
+      DEBUG: "True"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/freight_price_agent
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: dev_secret_key
+      ALLOWED_HOSTS: "*"
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: DEBUG
+    networks:
+      - freight_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    description: Celery worker for background task processing
+    build:
+      context: ../../src/backend
+      dockerfile: Dockerfile
+      target: build
+    command: celery -A tasks.worker.celery_app worker --loglevel=debug
+    volumes:
+      - ../../src/backend:/app
+    environment:
+      ENV: development
+      DEBUG: "True"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/freight_price_agent
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: dev_secret_key
+      LOG_LEVEL: DEBUG
+    networks:
+      - freight_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    description: Celery beat scheduler for periodic tasks
+    build:
+      context: ../../src/backend
+      dockerfile: Dockerfile
+      target: build
+    command: celery -A tasks.worker.celery_app beat --loglevel=debug
+    volumes:
+      - ../../src/backend:/app
+    environment:
+      ENV: development
+      DEBUG: "True"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/freight_price_agent
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: dev_secret_key
+      LOG_LEVEL: DEBUG
+    networks:
+      - freight_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    description: React-based web frontend for the Freight Price Movement Agent
+    build:
+      context: ../../src/web
+      dockerfile: Dockerfile
+      target: build
+    volumes:
+      - ../../src/web:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:8000/api
+      CHOKIDAR_USEPOLLING: "true"
+    networks:
+      - freight_network
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  db:
+    description: PostgreSQL database with TimescaleDB extension for time-series data
+    image: timescale/timescaledb:latest-pg13 # timescale/timescaledb version: latest-pg13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: freight_price_agent
+    ports:
+      - "5432:5432"
+    networks:
+      - freight_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "freight_price_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    description: Redis for caching and message broker
+    image: redis:6-alpine # redis version: 6-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    networks:
+      - freight_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  pgadmin:
+    description: PgAdmin web interface for database management
+    image: dpage/pgadmin4:latest # dpage/pgadmin4 version: latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - freight_network
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis-commander:
+    description: Web interface for Redis management
+    image: rediscommander/redis-commander:latest # rediscommander/redis-commander version: latest
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - freight_network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db-init:
+    description: One-time database initialization service
+    image: timescale/timescaledb:latest-pg13 # timescale/timescaledb version: latest-pg13
+    volumes:
+      - ../scripts:/scripts
+    command: '/scripts/init-db.sh -H db -u postgres -P postgres -d freight_price_agent -s'
+    networks:
+      - freight_network
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:
+    description: Persistent volume for PostgreSQL data
+  redis_data:
+    description: Persistent volume for Redis data
+  pgadmin_data:
+    description: Persistent volume for PgAdmin data
+  node_modules:
+    description: Volume for web node_modules to improve performance
+
+networks:
+  freight_network:
+    description: Internal network for service communication
