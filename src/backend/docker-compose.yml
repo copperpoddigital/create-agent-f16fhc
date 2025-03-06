@@ -1,0 +1,72 @@
+version: "3.8" # docker-compose version: 3.8
+
+services:
+  app: # service name: app
+    image: freight-price-agent-backend # image name: freight-price-agent-backend
+    build: # build context: .
+      context: .
+    environment: # environment variables
+      DEBUG: "true" # DEBUG=true
+      APP_NAME: "Freight Price Movement Agent" # APP_NAME=Freight Price Movement Agent
+      APP_VERSION: "0.1.0" # APP_VERSION=0.1.0
+      API_PREFIX: "/api/v1" # API_PREFIX=/api/v1
+      ALLOWED_HOSTS: "*" # ALLOWED_HOSTS=*
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:8080" # CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/freight_price_agent" # DATABASE_URL=postgresql://postgres:postgres@db:5432/freight_price_agent
+      DATABASE_POOL_SIZE: 5 # DATABASE_POOL_SIZE=5
+      DATABASE_MAX_OVERFLOW: 10 # DATABASE_MAX_OVERFLOW=10
+      REDIS_URL: "redis://cache:6379/0" # REDIS_URL=redis://cache:6379/0
+      CACHE_TTL: 3600 # CACHE_TTL=3600
+      RESULT_CACHE_TTL: 3600 # RESULT_CACHE_TTL=3600
+      REFERENCE_CACHE_TTL: 86400 # REFERENCE_CACHE_TTL=86400
+      QUERY_CACHE_TTL: 900 # QUERY_CACHE_TTL=900
+      JWT_SECRET_KEY: "development_secret_key" # JWT_SECRET_KEY=development_secret_key
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 30 # JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+      JWT_REFRESH_TOKEN_EXPIRE_DAYS: 7 # JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+      LOG_LEVEL: "DEBUG" # LOG_LEVEL=DEBUG
+      LOG_FORMAT: "json" # LOG_FORMAT=json
+    ports: # ports
+      - "8000:8000" # 8000:8000
+    volumes: # volumes
+      - .:/app # .:/app
+    depends_on: # depends_on
+      - db # db
+      - cache # cache
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload # command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped # restart: unless-stopped
+  db: # service name: db
+    image: timescale/timescaledb:latest-pg13 # image name: timescale/timescaledb:latest-pg13
+    environment: # environment variables
+      POSTGRES_USER: postgres # POSTGRES_USER=postgres
+      POSTGRES_PASSWORD: postgres # POSTGRES_PASSWORD=postgres
+      POSTGRES_DB: freight_price_agent # POSTGRES_DB=freight_price_agent
+    ports: # ports
+      - "5432:5432" # 5432:5432
+    volumes: # volumes
+      - postgres_data:/var/lib/postgresql/data # postgres_data:/var/lib/postgresql/data
+    healthcheck: # healthcheck
+      test: ["CMD", "pg_isready", "-U", "postgres"] # test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s # interval: 10s
+      timeout: 5s # timeout: 5s
+      retries: 5 # retries: 5
+    restart: unless-stopped # restart: unless-stopped
+  cache: # service name: cache
+    image: redis:6-alpine # image name: redis:6-alpine
+    command: redis-server --appendonly yes # command: redis-server --appendonly yes
+    ports: # ports
+      - "6379:6379" # 6379:6379
+    volumes: # volumes
+      - redis_data:/data # redis_data:/data
+    healthcheck: # healthcheck
+      test: ["CMD", "redis-cli", "ping"] # test: ["CMD", "redis-cli", "ping"]
+      interval: 10s # interval: 10s
+      timeout: 5s # timeout: 5s
+      retries: 5 # retries: 5
+    restart: unless-stopped # restart: unless-stopped
+
+volumes: # volumes
+  postgres_data: # volume name: postgres_data
+  redis_data: # volume name: redis_data
+
+networks: # networks
+  freight_price_network: # network name: freight_price_network
