@@ -1,0 +1,262 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "username": "admin",
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "role": "ADMIN",
+      "isActive": true,
+      "isLocked": false,
+      "lastLogin": "2023-06-15T10:30:00Z",
+      "defaultCurrency": "USD",
+      "dateFormat": "MM_DD_YYYY",
+      "theme": "DARK",
+      "emailNotifications": true,
+      "smsNotifications": false,
+      "inAppNotifications": true,
+      "preferences": {
+        "significantPriceChangeThreshold": 5,
+        "defaultView": "dashboard",
+        "dashboardLayout": {
+          "recentPriceChanges": true,
+          "priceTrendChart": true,
+          "savedAnalyses": true,
+          "alerts": true
+        },
+        "notifyOnPriceChanges": true,
+        "notifyOnDataSourceUpdates": true,
+        "notifyOnSystemMaintenance": true
+      },
+      "createdAt": "2023-01-01T00:00:00Z",
+      "updatedAt": "2023-06-15T10:30:00Z",
+      "password": "Admin123!"
+    },
+    {
+      "id": "2",
+      "username": "manager",
+      "email": "manager@example.com",
+      "firstName": "Manager",
+      "lastName": "User",
+      "role": "MANAGER",
+      "isActive": true,
+      "isLocked": false,
+      "lastLogin": "2023-06-14T15:45:00Z",
+      "defaultCurrency": "EUR",
+      "dateFormat": "DD_MM_YYYY",
+      "theme": "LIGHT",
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "inAppNotifications": true,
+      "preferences": {
+        "significantPriceChangeThreshold": 3,
+        "defaultView": "analysis",
+        "dashboardLayout": {
+          "recentPriceChanges": true,
+          "priceTrendChart": true,
+          "savedAnalyses": true,
+          "alerts": true
+        },
+        "notifyOnPriceChanges": true,
+        "notifyOnDataSourceUpdates": true,
+        "notifyOnSystemMaintenance": false
+      },
+      "createdAt": "2023-01-15T00:00:00Z",
+      "updatedAt": "2023-06-14T15:45:00Z",
+      "password": "Manager123!"
+    },
+    {
+      "id": "3",
+      "username": "analyst",
+      "email": "analyst@example.com",
+      "firstName": "Analyst",
+      "lastName": "User",
+      "role": "ANALYST",
+      "isActive": true,
+      "isLocked": false,
+      "lastLogin": "2023-06-15T09:15:00Z",
+      "defaultCurrency": "USD",
+      "dateFormat": "YYYY_MM_DD",
+      "theme": "SYSTEM",
+      "emailNotifications": true,
+      "smsNotifications": false,
+      "inAppNotifications": true,
+      "preferences": {
+        "significantPriceChangeThreshold": 2,
+        "defaultView": "reports",
+        "dashboardLayout": {
+          "recentPriceChanges": true,
+          "priceTrendChart": true,
+          "savedAnalyses": true,
+          "alerts": false
+        },
+        "notifyOnPriceChanges": true,
+        "notifyOnDataSourceUpdates": false,
+        "notifyOnSystemMaintenance": false
+      },
+      "createdAt": "2023-02-01T00:00:00Z",
+      "updatedAt": "2023-06-15T09:15:00Z",
+      "password": "Analyst123!"
+    },
+    {
+      "id": "4",
+      "username": "viewer",
+      "email": "viewer@example.com",
+      "firstName": "Viewer",
+      "lastName": "User",
+      "role": "VIEWER",
+      "isActive": true,
+      "isLocked": false,
+      "lastLogin": "2023-06-10T11:20:00Z",
+      "defaultCurrency": "GBP",
+      "dateFormat": "DD_MM_YYYY",
+      "theme": "LIGHT",
+      "emailNotifications": false,
+      "smsNotifications": false,
+      "inAppNotifications": true,
+      "preferences": {
+        "significantPriceChangeThreshold": 5,
+        "defaultView": "dashboard",
+        "dashboardLayout": {
+          "recentPriceChanges": true,
+          "priceTrendChart": true,
+          "savedAnalyses": false,
+          "alerts": false
+        },
+        "notifyOnPriceChanges": false,
+        "notifyOnDataSourceUpdates": false,
+        "notifyOnSystemMaintenance": false
+      },
+      "createdAt": "2023-03-01T00:00:00Z",
+      "updatedAt": "2023-06-10T11:20:00Z",
+      "password": "Viewer123!"
+    },
+    {
+      "id": "5",
+      "username": "inactive",
+      "email": "inactive@example.com",
+      "firstName": "Inactive",
+      "lastName": "User",
+      "role": "ANALYST",
+      "isActive": false,
+      "isLocked": false,
+      "lastLogin": "2023-05-01T10:00:00Z",
+      "defaultCurrency": "USD",
+      "dateFormat": "MM_DD_YYYY",
+      "theme": "DARK",
+      "emailNotifications": true,
+      "smsNotifications": false,
+      "inAppNotifications": true,
+      "preferences": null,
+      "createdAt": "2023-04-01T00:00:00Z",
+      "updatedAt": "2023-05-15T00:00:00Z",
+      "password": "Inactive123!"
+    },
+    {
+      "id": "6",
+      "username": "locked",
+      "email": "locked@example.com",
+      "firstName": "Locked",
+      "lastName": "User",
+      "role": "VIEWER",
+      "isActive": true,
+      "isLocked": true,
+      "lastLogin": "2023-05-10T09:30:00Z",
+      "defaultCurrency": "USD",
+      "dateFormat": "MM_DD_YYYY",
+      "theme": "LIGHT",
+      "emailNotifications": true,
+      "smsNotifications": false,
+      "inAppNotifications": true,
+      "preferences": null,
+      "createdAt": "2023-04-15T00:00:00Z",
+      "updatedAt": "2023-05-20T00:00:00Z",
+      "password": "Locked123!"
+    }
+  ],
+  "authTokens": {
+    "validTokens": {
+      "admin": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTY4NjgyNTQwMCwiZXhwIjoxNjg2ODI5MDAwfQ.MOCK_SIGNATURE",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsImlhdCI6MTY4NjgyNTQwMCwiZXhwIjoxNjg3NDMwMjAwfQ.MOCK_SIGNATURE",
+        "expiresAt": 1686829000000,
+        "tokenType": "Bearer"
+      },
+      "manager": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidXNlcm5hbWUiOiJtYW5hZ2VyIiwicm9sZSI6Ik1BTkFHRVIiLCJpYXQiOjE2ODY4MjU0MDAsImV4cCI6MTY4NjgyOTAwMH0.MOCK_SIGNATURE",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwidXNlcm5hbWUiOiJtYW5hZ2VyIiwiaWF0IjoxNjg2ODI1NDAwLCJleHAiOjE2ODc0MzAyMDB9.MOCK_SIGNATURE",
+        "expiresAt": 1686829000000,
+        "tokenType": "Bearer"
+      },
+      "analyst": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwidXNlcm5hbWUiOiJhbmFseXN0Iiwicm9sZSI6IkFOQUxZU1QiLCJpYXQiOjE2ODY4MjU0MDAsImV4cCI6MTY4NjgyOTAwMH0.MOCK_SIGNATURE",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwidXNlcm5hbWUiOiJhbmFseXN0IiwiaWF0IjoxNjg2ODI1NDAwLCJleHAiOjE2ODc0MzAyMDB9.MOCK_SIGNATURE",
+        "expiresAt": 1686829000000,
+        "tokenType": "Bearer"
+      },
+      "viewer": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwidXNlcm5hbWUiOiJ2aWV3ZXIiLCJyb2xlIjoiVklFV0VSIiwiaWF0IjoxNjg2ODI1NDAwLCJleHAiOjE2ODY4MjkwMDB9.MOCK_SIGNATURE",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwidXNlcm5hbWUiOiJ2aWV3ZXIiLCJpYXQiOjE2ODY4MjU0MDAsImV4cCI6MTY4NzQzMDIwMH0.MOCK_SIGNATURE",
+        "expiresAt": 1686829000000,
+        "tokenType": "Bearer"
+      }
+    },
+    "expiredTokens": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTY4NTYxNTQwMCwiZXhwIjoxNjg1NjE5MDAwfQ.MOCK_SIGNATURE",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsImlhdCI6MTY4NTYxNTQwMCwiZXhwIjoxNjg2MjIwMjAwfQ.MOCK_SIGNATURE",
+      "expiresAt": 1685619000000,
+      "tokenType": "Bearer"
+    }
+  },
+  "loginResponses": {
+    "success": {
+      "user": {
+        "id": "1",
+        "username": "admin",
+        "email": "admin@example.com",
+        "firstName": "Admin",
+        "lastName": "User",
+        "role": "ADMIN",
+        "isActive": true,
+        "isLocked": false,
+        "lastLogin": "2023-06-15T10:30:00Z",
+        "defaultCurrency": "USD",
+        "dateFormat": "MM_DD_YYYY",
+        "theme": "DARK",
+        "emailNotifications": true,
+        "smsNotifications": false,
+        "inAppNotifications": true,
+        "preferences": {
+          "significantPriceChangeThreshold": 5,
+          "defaultView": "dashboard",
+          "dashboardLayout": {
+            "recentPriceChanges": true,
+            "priceTrendChart": true,
+            "savedAnalyses": true,
+            "alerts": true
+          },
+          "notifyOnPriceChanges": true,
+          "notifyOnDataSourceUpdates": true,
+          "notifyOnSystemMaintenance": true
+        },
+        "createdAt": "2023-01-01T00:00:00Z",
+        "updatedAt": "2023-06-15T10:30:00Z"
+      },
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTY4NjgyNTQwMCwiZXhwIjoxNjg2ODI5MDAwfQ.MOCK_SIGNATURE",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsImlhdCI6MTY4NjgyNTQwMCwiZXhwIjoxNjg3NDMwMjAwfQ.MOCK_SIGNATURE",
+      "expiresAt": 1686829000000,
+      "tokenType": "Bearer"
+    },
+    "invalidCredentials": {
+      "status": 401,
+      "message": "Invalid username or password",
+      "error": "Unauthorized"
+    },
+    "accountLocked": {
+      "status": 403,
+      "message": "Account is locked. Please contact an administrator.",
+      "error": "Forbidden"
+    }
+  }
+}
