@@ -1,0 +1,253 @@
+/* 
+ * Card Component Styles
+ * Defines styling for card components in the Freight Price Movement Agent 
+ * Implements various card variants, sizes, and states
+ */
+
+/* Base card styling with flexbox layout and subtle shadow */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: white;
+  background-clip: border-box;
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+/* Card header section styling */
+.card-header {
+  padding: var(--spacing-md);
+  margin-bottom: 0;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: var(--border-width-thin) solid var(--color-border);
+}
+
+/* Adjust border radius for first child header */
+.card-header:first-child {
+  border-radius: calc(var(--border-radius-md) - 1px) calc(var(--border-radius-md) - 1px) 0 0;
+}
+
+/* Card title styling */
+.card-title {
+  margin-top: 0;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+/* Card subtitle styling */
+.card-subtitle {
+  margin-top: calc(-1 * var(--spacing-xs));
+  margin-bottom: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  opacity: 0.8;
+}
+
+/* Card body section styling with flex grow */
+.card-body {
+  flex: 1 1 auto;
+  padding: var(--spacing-md);
+}
+
+/* Card footer section styling */
+.card-footer {
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.03);
+  border-top: var(--border-width-thin) solid var(--color-border);
+}
+
+/* Adjust border radius for last child footer */
+.card-footer:last-child {
+  border-radius: 0 0 calc(var(--border-radius-md) - 1px) calc(var(--border-radius-md) - 1px);
+}
+
+/* Card image styling */
+.card-img {
+  width: 100%;
+  border-radius: calc(var(--border-radius-md) - 1px);
+}
+
+/* Card top image styling */
+.card-img-top {
+  width: 100%;
+  border-top-left-radius: calc(var(--border-radius-md) - 1px);
+  border-top-right-radius: calc(var(--border-radius-md) - 1px);
+}
+
+/* Card bottom image styling */
+.card-img-bottom {
+  width: 100%;
+  border-bottom-right-radius: calc(var(--border-radius-md) - 1px);
+  border-bottom-left-radius: calc(var(--border-radius-md) - 1px);
+}
+
+/* Card size variants */
+.card-sm {
+  max-width: 300px;
+}
+
+.card-md {
+  max-width: 500px;
+}
+
+.card-lg {
+  max-width: 800px;
+}
+
+.card-full-width {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Card color variants with top border accents */
+.card-primary {
+  border-color: var(--color-primary);
+  border-top: var(--border-width-medium) solid var(--color-primary);
+}
+
+.card-secondary {
+  border-color: var(--color-secondary);
+  border-top: var(--border-width-medium) solid var(--color-secondary);
+}
+
+.card-success {
+  border-color: var(--color-success);
+  border-top: var(--border-width-medium) solid var(--color-success);
+}
+
+.card-warning {
+  border-color: var(--color-warning);
+  border-top: var(--border-width-medium) solid var(--color-warning);
+}
+
+.card-danger {
+  border-color: var(--color-danger);
+  border-top: var(--border-width-medium) solid var(--color-danger);
+}
+
+/* Card outline variants */
+.card-outline-primary {
+  border-color: var(--color-primary);
+}
+
+.card-outline-secondary {
+  border-color: var(--color-secondary);
+}
+
+.card-outline-success {
+  border-color: var(--color-success);
+}
+
+.card-outline-warning {
+  border-color: var(--color-warning);
+}
+
+.card-outline-danger {
+  border-color: var(--color-danger);
+}
+
+/* Interactive card states */
+.card-clickable {
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-clickable:active {
+  transform: translateY(0);
+}
+
+/* Focus state for clickable cards (accessibility) */
+.card-clickable:focus {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Card layout utilities */
+.card-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-group .card {
+  margin-bottom: var(--spacing-md);
+}
+
+.card-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.card-columns {
+  column-count: 1;
+  column-gap: var(--spacing-md);
+}
+
+.card-columns .card {
+  display: inline-block;
+  width: 100%;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Dashboard specific card styling */
+.card-dashboard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-dashboard .card-body {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+/* Responsive adjustments */
+@media (min-width: 576px) {
+  .card-columns {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 992px) {
+  .card-columns {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 768px) {
+  .card-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .card-group .card {
+    flex: 1 0 0%;
+    margin-bottom: 0;
+    margin-right: var(--spacing-md);
+  }
+  
+  .card-group .card:last-child {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .card-body {
+    padding: var(--spacing-sm);
+  }
+  
+  .card-header, .card-footer {
+    padding: var(--spacing-sm);
+  }
+}
