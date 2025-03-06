@@ -1,0 +1,565 @@
+from datetime import datetime
+from enum import Enum
+from typing import Dict, Optional, Any, List, Union
+from dataclasses import dataclass, field
+
+
+class DataSourceType(Enum):
+    """Enum representing the types of data sources supported by the system."""
+    CSV = "CSV"
+    DATABASE = "DATABASE"
+    API = "API"
+    TMS = "TMS"
+    ERP = "ERP"
+
+
+class DataSourceStatus(Enum):
+    """Enum representing the possible statuses of a data source."""
+    ACTIVE = "ACTIVE"
+    WARNING = "WARNING"
+    INACTIVE = "INACTIVE"
+    ERROR = "ERROR"
+
+
+class AuthType(Enum):
+    """Enum representing the authentication types for API data sources."""
+    NONE = "NONE"
+    BASIC = "BASIC"
+    API_KEY = "API_KEY"
+    OAUTH2 = "OAUTH2"
+    CUSTOM = "CUSTOM"
+
+
+class DatabaseType(Enum):
+    """Enum representing the supported database types."""
+    POSTGRESQL = "POSTGRESQL"
+    MYSQL = "MYSQL"
+    ORACLE = "ORACLE"
+    SQLSERVER = "SQLSERVER"
+    OTHER = "OTHER"
+
+
+class TMSType(Enum):
+    """Enum representing the supported Transportation Management System types."""
+    SAP_TM = "SAP_TM"
+    ORACLE_TMS = "ORACLE_TMS"
+    JDA_TMS = "JDA_TMS"
+    CUSTOM = "CUSTOM"
+
+
+class ERPType(Enum):
+    """Enum representing the supported Enterprise Resource Planning system types."""
+    SAP_ERP = "SAP_ERP"
+    ORACLE_ERP = "ORACLE_ERP"
+    MICROSOFT_DYNAMICS = "MICROSOFT_DYNAMICS"
+    CUSTOM = "CUSTOM"
+
+
+@dataclass
+class FieldMapping:
+    """Class representing the mapping of source fields to standard fields."""
+    freight_charge: Optional[str] = None
+    currency: Optional[str] = None
+    origin: Optional[str] = None
+    destination: Optional[str] = None
+    date_time: Optional[str] = None
+    carrier: Optional[str] = None
+    mode: Optional[str] = None
+    service_level: Optional[str] = None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Optional[str]]) -> 'FieldMapping':
+        """Create a FieldMapping instance from a dictionary."""
+        return cls(
+            freight_charge=data.get('freight_charge'),
+            currency=data.get('currency'),
+            origin=data.get('origin'),
+            destination=data.get('destination'),
+            date_time=data.get('date_time'),
+            carrier=data.get('carrier'),
+            mode=data.get('mode'),
+            service_level=data.get('service_level')
+        )
+    
+    def to_dict(self) -> Dict[str, Optional[str]]:
+        """Convert the field mapping to a dictionary."""
+        return {
+            'freight_charge': self.freight_charge,
+            'currency': self.currency,
+            'origin': self.origin,
+            'destination': self.destination,
+            'date_time': self.date_time,
+            'carrier': self.carrier,
+            'mode': self.mode,
+            'service_level': self.service_level
+        }
+
+
+@dataclass
+class DataSource:
+    """Base class for all data sources."""
+    id: str
+    name: str
+    description: str
+    source_type: DataSourceType
+    status: DataSourceStatus
+    created_at: datetime
+    updated_at: datetime
+    last_sync: Optional[datetime] = None
+    field_mapping: FieldMapping = field(default_factory=FieldMapping)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DataSource':
+        """Create a DataSource instance from a dictionary."""
+        source_type = DataSourceType(data.get('source_type'))
+        
+        # Convert the field mapping dictionary to a FieldMapping object
+        field_mapping = FieldMapping.from_dict(data.get('field_mapping', {}))
+        
+        # Parse datetime strings to datetime objects
+        created_at = datetime.fromisoformat(data.get('created_at').replace('Z', '+00:00'))
+        updated_at = datetime.fromisoformat(data.get('updated_at').replace('Z', '+00:00'))
+        
+        last_sync = None
+        if data.get('last_sync'):
+            last_sync = datetime.fromisoformat(data.get('last_sync').replace('Z', '+00:00'))
+        
+        # Return the appropriate subclass based on source_type
+        if source_type == DataSourceType.CSV:
+            return CSVDataSource.from_dict(data, field_mapping, created_at, updated_at, last_sync)
+        elif source_type == DataSourceType.DATABASE:
+            return DatabaseDataSource.from_dict(data, field_mapping, created_at, updated_at, last_sync)
+        elif source_type == DataSourceType.API:
+            return APIDataSource.from_dict(data, field_mapping, created_at, updated_at, last_sync)
+        elif source_type == DataSourceType.TMS:
+            return TMSDataSource.from_dict(data, field_mapping, created_at, updated_at, last_sync)
+        elif source_type == DataSourceType.ERP:
+            return ERPDataSource.from_dict(data, field_mapping, created_at, updated_at, last_sync)
+        
+        # If no specific type is matched, return a base DataSource
+        return cls(
+            id=data.get('id'),
+            name=data.get('name'),
+            description=data.get('description'),
+            source_type=source_type,
+            status=DataSourceStatus(data.get('status')),
+            created_at=created_at,
+            updated_at=updated_at,
+            last_sync=last_sync,
+            field_mapping=field_mapping
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the data source to a dictionary."""
+        result = {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'source_type': self.source_type.value,
+            'status': self.status.value,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'field_mapping': self.field_mapping.to_dict()
+        }
+        
+        if self.last_sync:
+            result['last_sync'] = self.last_sync.isoformat()
+        
+        return result
+
+
+@dataclass
+class CSVDataSource(DataSource):
+    """Class representing a CSV file data source."""
+    file_path: str = ""
+    file_name: str = ""
+    delimiter: str = ","
+    has_header: bool = True
+    date_format: str = "YYYY-MM-DD"
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], field_mapping: FieldMapping,
+                 created_at: datetime, updated_at: datetime, last_sync: Optional[datetime]) -> 'CSVDataSource':
+        """Create a CSVDataSource instance from a dictionary."""
+        return cls(
+            id=data.get('id'),
+            name=data.get('name'),
+            description=data.get('description'),
+            source_type=DataSourceType(data.get('source_type')),
+            status=DataSourceStatus(data.get('status')),
+            created_at=created_at,
+            updated_at=updated_at,
+            last_sync=last_sync,
+            field_mapping=field_mapping,
+            file_path=data.get('file_path', ''),
+            file_name=data.get('file_name', ''),
+            delimiter=data.get('delimiter', ','),
+            has_header=data.get('has_header', True),
+            date_format=data.get('date_format', 'YYYY-MM-DD')
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the CSV data source to a dictionary."""
+        result = super().to_dict()
+        result.update({
+            'file_path': self.file_path,
+            'file_name': self.file_name,
+            'delimiter': self.delimiter,
+            'has_header': self.has_header,
+            'date_format': self.date_format
+        })
+        return result
+
+
+@dataclass
+class DatabaseDataSource(DataSource):
+    """Class representing a database data source."""
+    database_type: DatabaseType = DatabaseType.POSTGRESQL
+    host: str = ""
+    port: int = 5432
+    database: str = ""
+    username: str = ""
+    password: Optional[str] = None
+    query: str = ""
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], field_mapping: FieldMapping,
+                 created_at: datetime, updated_at: datetime, last_sync: Optional[datetime]) -> 'DatabaseDataSource':
+        """Create a DatabaseDataSource instance from a dictionary."""
+        return cls(
+            id=data.get('id'),
+            name=data.get('name'),
+            description=data.get('description'),
+            source_type=DataSourceType(data.get('source_type')),
+            status=DataSourceStatus(data.get('status')),
+            created_at=created_at,
+            updated_at=updated_at,
+            last_sync=last_sync,
+            field_mapping=field_mapping,
+            database_type=DatabaseType(data.get('database_type', DatabaseType.POSTGRESQL.value)),
+            host=data.get('host', ''),
+            port=data.get('port', 5432),
+            database=data.get('database', ''),
+            username=data.get('username', ''),
+            password=data.get('password'),
+            query=data.get('query', '')
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the database data source to a dictionary."""
+        result = super().to_dict()
+        result.update({
+            'database_type': self.database_type.value,
+            'host': self.host,
+            'port': self.port,
+            'database': self.database,
+            'username': self.username,
+            'query': self.query
+        })
+        # Only include password if it's not None
+        if self.password:
+            result['password'] = '********'  # Mask the password for security
+        return result
+
+
+@dataclass
+class AuthConfig:
+    """Class representing authentication configuration for API data sources."""
+    type: AuthType
+    # Basic auth
+    username: Optional[str] = None
+    password: Optional[str] = None
+    # API key auth
+    api_key_header: Optional[str] = None
+    api_key: Optional[str] = None
+    # OAuth2
+    token_url: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    scope: Optional[str] = None
+    
+    @classmethod
+    def from_dict(cls, auth_type: str, config: Dict[str, Any]) -> 'AuthConfig':
+        """Create an AuthConfig instance from a dictionary."""
+        auth_type_enum = AuthType(auth_type)
+        
+        if auth_type_enum == AuthType.BASIC:
+            return cls(
+                type=auth_type_enum,
+                username=config.get('username'),
+                password=config.get('password')
+            )
+        elif auth_type_enum == AuthType.API_KEY:
+            return cls(
+                type=auth_type_enum,
+                api_key_header=config.get('api_key_header'),
+                api_key=config.get('api_key')
+            )
+        elif auth_type_enum == AuthType.OAUTH2:
+            return cls(
+                type=auth_type_enum,
+                token_url=config.get('token_url'),
+                client_id=config.get('client_id'),
+                client_secret=config.get('client_secret'),
+                scope=config.get('scope')
+            )
+        else:
+            return cls(type=auth_type_enum)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the auth config to a dictionary."""
+        result = {'type': self.type.value}
+        
+        if self.type == AuthType.BASIC:
+            result.update({
+                'username': self.username,
+                'password': '********' if self.password else None
+            })
+        elif self.type == AuthType.API_KEY:
+            result.update({
+                'api_key_header': self.api_key_header,
+                'api_key': '********' if self.api_key else None
+            })
+        elif self.type == AuthType.OAUTH2:
+            result.update({
+                'token_url': self.token_url,
+                'client_id': self.client_id,
+                'client_secret': '********' if self.client_secret else None,
+                'scope': self.scope
+            })
+        
+        # Filter out None values
+        return {k: v for k, v in result.items() if v is not None}
+
+
+@dataclass
+class APIDataSource(DataSource):
+    """Class representing an API data source."""
+    url: str = ""
+    method: str = "GET"
+    headers: Dict[str, str] = field(default_factory=dict)
+    body: Optional[str] = None
+    auth_type: AuthType = AuthType.NONE
+    auth_config: Optional[AuthConfig] = None
+    response_path: Optional[str] = None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], field_mapping: FieldMapping,
+                 created_at: datetime, updated_at: datetime, last_sync: Optional[datetime]) -> 'APIDataSource':
+        """Create an APIDataSource instance from a dictionary."""
+        auth_type = data.get('auth_type', AuthType.NONE.value)
+        auth_config = None
+        if 'auth_config' in data and auth_type != AuthType.NONE.value:
+            auth_config = AuthConfig.from_dict(auth_type, data.get('auth_config', {}))
+        
+        return cls(
+            id=data.get('id'),
+            name=data.get('name'),
+            description=data.get('description'),
+            source_type=DataSourceType(data.get('source_type')),
+            status=DataSourceStatus(data.get('status')),
+            created_at=created_at,
+            updated_at=updated_at,
+            last_sync=last_sync,
+            field_mapping=field_mapping,
+            url=data.get('url', ''),
+            method=data.get('method', 'GET'),
+            headers=data.get('headers', {}),
+            body=data.get('body'),
+            auth_type=AuthType(auth_type),
+            auth_config=auth_config,
+            response_path=data.get('response_path')
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the API data source to a dictionary."""
+        result = super().to_dict()
+        result.update({
+            'url': self.url,
+            'method': self.method,
+            'headers': self.headers,
+            'body': self.body,
+            'auth_type': self.auth_type.value,
+            'response_path': self.response_path
+        })
+        
+        if self.auth_config:
+            result['auth_config'] = self.auth_config.to_dict()
+        
+        return result
+
+
+@dataclass
+class TMSDataSource(DataSource):
+    """Class representing a Transportation Management System data source."""
+    tms_type: TMSType = TMSType.CUSTOM
+    connection_url: str = ""
+    username: Optional[str] = None
+    api_key: Optional[str] = None
+    custom_parameters: Dict[str, Any] = field(default_factory=dict)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], field_mapping: FieldMapping,
+                 created_at: datetime, updated_at: datetime, last_sync: Optional[datetime]) -> 'TMSDataSource':
+        """Create a TMSDataSource instance from a dictionary."""
+        return cls(
+            id=data.get('id'),
+            name=data.get('name'),
+            description=data.get('description'),
+            source_type=DataSourceType(data.get('source_type')),
+            status=DataSourceStatus(data.get('status')),
+            created_at=created_at,
+            updated_at=updated_at,
+            last_sync=last_sync,
+            field_mapping=field_mapping,
+            tms_type=TMSType(data.get('tms_type', TMSType.CUSTOM.value)),
+            connection_url=data.get('connection_url', ''),
+            username=data.get('username'),
+            api_key=data.get('api_key'),
+            custom_parameters=data.get('custom_parameters', {})
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the TMS data source to a dictionary."""
+        result = super().to_dict()
+        result.update({
+            'tms_type': self.tms_type.value,
+            'connection_url': self.connection_url,
+            'username': self.username,
+            'custom_parameters': self.custom_parameters
+        })
+        
+        if self.api_key:
+            result['api_key'] = '********'  # Mask the API key for security
+        
+        return result
+
+
+@dataclass
+class ERPDataSource(DataSource):
+    """Class representing an Enterprise Resource Planning system data source."""
+    erp_type: ERPType = ERPType.CUSTOM
+    connection_url: str = ""
+    username: Optional[str] = None
+    api_key: Optional[str] = None
+    custom_parameters: Dict[str, Any] = field(default_factory=dict)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], field_mapping: FieldMapping,
+                 created_at: datetime, updated_at: datetime, last_sync: Optional[datetime]) -> 'ERPDataSource':
+        """Create an ERPDataSource instance from a dictionary."""
+        return cls(
+            id=data.get('id'),
+            name=data.get('name'),
+            description=data.get('description'),
+            source_type=DataSourceType(data.get('source_type')),
+            status=DataSourceStatus(data.get('status')),
+            created_at=created_at,
+            updated_at=updated_at,
+            last_sync=last_sync,
+            field_mapping=field_mapping,
+            erp_type=ERPType(data.get('erp_type', ERPType.CUSTOM.value)),
+            connection_url=data.get('connection_url', ''),
+            username=data.get('username'),
+            api_key=data.get('api_key'),
+            custom_parameters=data.get('custom_parameters', {})
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the ERP data source to a dictionary."""
+        result = super().to_dict()
+        result.update({
+            'erp_type': self.erp_type.value,
+            'connection_url': self.connection_url,
+            'username': self.username,
+            'custom_parameters': self.custom_parameters
+        })
+        
+        if self.api_key:
+            result['api_key'] = '********'  # Mask the API key for security
+        
+        return result
+
+
+class DataSourceFactory:
+    """Factory class for creating data sources from a variety of input formats."""
+    
+    @staticmethod
+    def create_from_dict(data: Dict[str, Any]) -> DataSource:
+        """Create a data source from a dictionary."""
+        return DataSource.from_dict(data)
+    
+    @staticmethod
+    def create_from_json(json_str: str) -> DataSource:
+        """Create a data source from a JSON string."""
+        import json
+        data = json.loads(json_str)
+        return DataSource.from_dict(data)
+    
+    @staticmethod
+    def create_from_dicts(data_list: List[Dict[str, Any]]) -> List[DataSource]:
+        """Create multiple data sources from a list of dictionaries."""
+        return [DataSource.from_dict(data) for data in data_list]
+    
+    @staticmethod
+    def create_from_json_list(json_str: str) -> List[DataSource]:
+        """Create multiple data sources from a JSON array string."""
+        import json
+        data_list = json.loads(json_str)
+        return [DataSource.from_dict(data) for data in data_list]
+
+
+class DataSourceRegistry:
+    """Registry class for managing data sources."""
+    
+    def __init__(self):
+        self.data_sources: Dict[str, DataSource] = {}
+    
+    def register(self, data_source: DataSource) -> None:
+        """Register a data source."""
+        self.data_sources[data_source.id] = data_source
+    
+    def unregister(self, data_source_id: str) -> None:
+        """Unregister a data source."""
+        if data_source_id in self.data_sources:
+            del self.data_sources[data_source_id]
+    
+    def get(self, data_source_id: str) -> Optional[DataSource]:
+        """Get a data source by ID."""
+        return self.data_sources.get(data_source_id)
+    
+    def get_all(self) -> List[DataSource]:
+        """Get all registered data sources."""
+        return list(self.data_sources.values())
+    
+    def get_by_type(self, source_type: DataSourceType) -> List[DataSource]:
+        """Get all data sources of a specific type."""
+        return [ds for ds in self.data_sources.values() if ds.source_type == source_type]
+    
+    def get_by_status(self, status: DataSourceStatus) -> List[DataSource]:
+        """Get all data sources with a specific status."""
+        return [ds for ds in self.data_sources.values() if ds.status == status]
+    
+    def get_active(self) -> List[DataSource]:
+        """Get all active data sources."""
+        return self.get_by_status(DataSourceStatus.ACTIVE)
+    
+    def count(self) -> int:
+        """Get the total number of registered data sources."""
+        return len(self.data_sources)
+    
+    def clear(self) -> None:
+        """Clear all registered data sources."""
+        self.data_sources.clear()
+    
+    def load_from_json(self, json_str: str) -> None:
+        """Load data sources from a JSON string."""
+        data_sources = DataSourceFactory.create_from_json_list(json_str)
+        for ds in data_sources:
+            self.register(ds)
+    
+    def save_to_json(self) -> str:
+        """Save all data sources to a JSON string."""
+        import json
+        data = [ds.to_dict() for ds in self.data_sources.values()]
+        return json.dumps(data, indent=2)
