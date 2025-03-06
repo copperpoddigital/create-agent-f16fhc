@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      target: build  # Use the development stage from Dockerfile
+    image: freight-price-agent-web-dev
+    ports:
+      - "3000:3000"  # Expose development server port
+    volumes:
+      - .:/app  # Mount source code for hot reloading
+      - node_modules:/app/node_modules  # Use container's node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000/api/v1  # API URL for backend communication
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for hot reload in certain environments
+      - PORT=3000
+    command: npm run dev  # Start Vite dev server
+    restart: unless-stopped
+    networks:
+      - freight_price_network  # Connect to network with backend services
+
+volumes:
+  node_modules:  # Persistent volume for node_modules to improve build performance
+    # Using a named volume prevents the host's node_modules from overriding the container's
+
+networks:
+  freight_price_network:
+    external: true  # Reference an existing network created elsewhere
