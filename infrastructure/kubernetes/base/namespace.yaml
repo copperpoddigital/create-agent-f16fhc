@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: freight-price-agent
+  labels:
+    name: freight-price-agent
+    app: freight-price-movement-agent
+    environment: ${ENV}
+  annotations:
+    description: Namespace for Freight Price Movement Agent application
