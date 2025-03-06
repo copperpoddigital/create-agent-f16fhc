@@ -1,0 +1,100 @@
+/**
+ * Global CSS Variables
+ *
+ * This file defines the design system variables used throughout the 
+ * Freight Price Movement Agent web application. It establishes a consistent
+ * design language by defining colors, typography, spacing, and other
+ * visual elements.
+ */
+
+:root {
+  /* Typography */
+  --font-family-primary: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --font-size-base: 14px;
+  --font-size-small: 12px;
+  --font-size-large: 16px;
+  --font-size-h1: 24px;
+  --font-size-h2: 20px;
+  --font-size-h3: 18px;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.2;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* Borders */
+  --border-radius-sm: 2px;
+  --border-radius-md: 4px;
+  --border-radius-lg: 8px;
+  --border-radius-circle: 50%;
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 4px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-medium: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+
+  /* Container Widths */
+  --container-sm: 540px;
+  --container-md: 720px;
+  --container-lg: 960px;
+  --container-xl: 1140px;
+
+  /* Z-index */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+
+  /* Colors */
+  --color-primary: #1A5276; /* Deep Blue - Primary brand color for headers and primary buttons */
+  --color-secondary: #148F77; /* Teal - Secondary color for accents and secondary actions */
+  --color-background: #F8F9F9; /* Light Gray - Default page background color */
+  --color-text: #2C3E50; /* Dark Gray - Primary text color */
+  --color-accent: #E67E22; /* Orange - Used for alerts and important notifications */
+  --color-success: #27AE60; /* Green - Used for success states and positive indicators */
+  --color-warning: #F39C12; /* Amber - Used for warnings and caution states */
+  --color-danger: #C0392B; /* Red - Used for errors and critical alerts */
+  --color-primary-light: #2980B9; /* Lighter version of primary color for hover states */
+  --color-primary-dark: #154360; /* Darker version of primary color for active states */
+  --color-secondary-light: #1ABC9C; /* Lighter version of secondary color for hover states */
+  --color-secondary-dark: #0E6655; /* Darker version of secondary color for active states */
+  --color-border: #D5D8DC; /* Light gray for borders and dividers */
+  --color-disabled: #95A5A6; /* Gray for disabled elements */
+  --color-focus: rgba(26, 82, 118, 0.5); /* Semi-transparent primary color for focus states */
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05); /* Small shadow for subtle elevation */
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1); /* Medium shadow for cards and dropdowns */
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1); /* Large shadow for modals and popovers */
+  --shadow-focus: 0 0 0 3px rgba(26, 82, 118, 0.5); /* Focus shadow using primary color */
+}
+
+/* Media Queries */
+@media (max-width: 767px) {
+  :root {
+    /* Adjusted spacing for mobile devices */
+    --spacing-md: 12px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    --spacing-xxl: 32px;
+    
+    /* Adjusted typography for mobile devices */
+    --font-size-h1: 22px;
+    --font-size-h2: 18px;
+    --font-size-h3: 16px;
+  }
+}
