@@ -1,0 +1,176 @@
+from datetime import datetime
+from enum import Enum
+from typing import List, Optional, Any
+from pydantic import BaseModel, validator, root_validator
+
+class TrendDirection(str, Enum):
+    """Enum representing the direction of price movement trend."""
+    INCREASING = "INCREASING"
+    DECREASING = "DECREASING"
+    STABLE = "STABLE"
+
+class GranularityType(str, Enum):
+    """Enum representing time period granularity options."""
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+    CUSTOM = "CUSTOM"
+
+class AnalysisStatus(str, Enum):
+    """Enum representing the status of an analysis."""
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+class FilterOperator(str, Enum):
+    """Enum representing filter condition operators."""
+    EQUALS = "equals"
+    IN = "in"
+    GREATER_THAN = "greater_than"
+    LESS_THAN = "less_than"
+    BETWEEN = "between"
+
+class FilterCondition(BaseModel):
+    """Model representing a filter condition for analysis."""
+    field: str
+    operator: FilterOperator
+    value: Any  # Flexible type to match different value types in JSON
+    
+    @root_validator
+    def validate_operator_value_match(cls, values):
+        """Validate that the value type matches the operator requirements."""
+        operator = values.get('operator')
+        value = values.get('value')
+        
+        if operator == FilterOperator.IN and not isinstance(value, list):
+            raise ValueError(f"Operator '{operator}' requires a list value")
+        
+        if operator in [FilterOperator.EQUALS, FilterOperator.GREATER_THAN, FilterOperator.LESS_THAN] and isinstance(value, list):
+            raise ValueError(f"Operator '{operator}' requires a single value, not a list")
+            
+        if operator == FilterOperator.BETWEEN and (not isinstance(value, list) or len(value) != 2):
+            raise ValueError(f"Operator '{operator}' requires a list of exactly 2 values")
+            
+        return values
+
+class TimePeriod(BaseModel):
+    """Model representing a time period for analysis."""
+    id: str
+    name: str
+    start_date: str  # ISO format date
+    end_date: str    # ISO format date
+    granularity: GranularityType
+    custom_interval: Optional[str] = None
+    is_custom: bool = False
+    created_by: str
+    created_at: str  # ISO format datetime
+    
+    @root_validator
+    def validate_dates(cls, values):
+        """Validate that start_date is before end_date."""
+        start_date = values.get('start_date')
+        end_date = values.get('end_date')
+        
+        if start_date and end_date:
+            start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            
+            if start > end:
+                raise ValueError("start_date must be before end_date")
+                
+        return values
+        
+    @validator('custom_interval')
+    def validate_custom_interval(cls, v, values):
+        """Validate that custom_interval is provided when granularity is CUSTOM."""
+        if 'granularity' in values and values['granularity'] == GranularityType.CUSTOM and not v:
+            raise ValueError("custom_interval is required when granularity is CUSTOM")
+        return v
+
+class PriceChange(BaseModel):
+    """Model representing price change metrics."""
+    absolute_change: float
+    percentage_change: float
+    trend_direction: TrendDirection
+
+class Aggregates(BaseModel):
+    """Model representing statistical aggregates."""
+    average: float
+    minimum: float
+    maximum: float
+    
+    @root_validator
+    def validate_min_max(cls, values):
+        """Validate that minimum is not greater than maximum."""
+        minimum = values.get('minimum')
+        maximum = values.get('maximum')
+        
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise ValueError("minimum cannot be greater than maximum")
+            
+        return values
+
+class TimeSeriesPoint(BaseModel):
+    """Model representing a single point in a time series."""
+    timestamp: str  # ISO format datetime
+    value: float
+
+class DetailedResult(BaseModel):
+    """Model representing detailed results for a specific period."""
+    period: str
+    price: float
+    absolute_change: Optional[float] = None
+    percentage_change: Optional[float] = None
+    trend_direction: Optional[TrendDirection] = None
+
+class AnalysisResult(BaseModel):
+    """
+    Main model representing the results of a freight price movement analysis.
+    
+    This model contains all information about an analysis, including the parameters
+    used, the calculated results, and metadata about the analysis process.
+    """
+    id: str
+    name: str
+    analysis_id: str
+    time_period: TimePeriod
+    filters: List[FilterCondition]
+    start_value: Optional[float] = None
+    end_value: Optional[float] = None
+    currency: str
+    price_change: Optional[PriceChange] = None
+    aggregates: Optional[Aggregates] = None
+    time_series: List[TimeSeriesPoint] = []
+    detailed_results: List[DetailedResult] = []
+    baseline_comparison: Optional[PriceChange] = None
+    calculated_at: Optional[str] = None  # ISO format datetime
+    status: AnalysisStatus
+    error_message: Optional[str] = None
+    data_source_ids: List[str]
+    created_by: str
+    created_at: str  # ISO format datetime
+
+    class Config:
+        allow_population_by_field_name = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+        
+    @validator('error_message')
+    def validate_error_message(cls, v, values):
+        """Validate that error_message is provided when status is FAILED."""
+        if 'status' in values and values['status'] == AnalysisStatus.FAILED and not v:
+            raise ValueError("error_message is required when status is FAILED")
+        return v
+        
+    def is_completed(self) -> bool:
+        """Check if the analysis is completed."""
+        return self.status == AnalysisStatus.COMPLETED
+    
+    def is_processing(self) -> bool:
+        """Check if the analysis is still processing."""
+        return self.status == AnalysisStatus.PROCESSING
+    
+    def is_failed(self) -> bool:
+        """Check if the analysis has failed."""
+        return self.status == AnalysisStatus.FAILED
