@@ -1,0 +1,223 @@
+name: Deploy to Development
+
+on:
+  workflow_run:
+    workflows: ["Backend CI", "Web CI"]
+    branches: ["develop"]
+    types: [completed]
+  workflow_dispatch:
+    description: Manual trigger for deployment
+
+env:
+  TF_WORKING_DIR: infrastructure/terraform/aws
+  TF_VAR_FILE: environments/dev.tfvars
+  AWS_REGION: us-west-2
+  ENVIRONMENT: dev
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  BACKEND_IMAGE: freight-price-movement-agent/backend
+  WEB_IMAGE: freight-price-movement-agent/web
+
+jobs:
+  check-workflow-status:
+    name: Check Workflow Status
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Success
+        run: echo 'Prerequisite workflow succeeded, proceeding with deployment'
+    outputs:
+      proceed: 'true'
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    needs: check-workflow-status
+    runs-on: ubuntu-latest
+    if: ${{ needs.check-workflow-status.outputs.proceed == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.4.x'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -var-file=${{ env.TF_VAR_FILE }} -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Extract Infrastructure Outputs
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform output -json > tf-outputs.json
+
+      - name: Upload Terraform Outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-outputs
+          path: ${{ env.TF_WORKING_DIR }}/tf-outputs.json
+
+  deploy-backend:
+    name: Deploy Backend
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy to ECS
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service backend-service --force-new-deployment
+
+      - name: Wait for service to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services backend-service
+
+  deploy-web:
+    name: Deploy Web
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy to ECS
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service web-service --force-new-deployment
+
+      - name: Wait for service to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services web-service
+
+  smoke-tests:
+    name: Run Smoke Tests
+    needs: [deploy-backend, deploy-web]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set API endpoint variable
+        run: echo "API_ENDPOINT=$(jq -r .api_endpoint.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Check API health
+        run: curl -f $API_ENDPOINT/health || exit 1
+
+      - name: Run basic API tests
+        run: cd src/backend/tests && python -m pytest test_api/test_health.py -v
+
+  post-deployment-notification:
+    name: Post Deployment Notification
+    needs: [smoke-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send success notification
+        if: success()
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"✅ Freight Price Movement Agent successfully deployed to development environment"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Send failure notification
+        if: failure()
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"❌ Freight Price Movement Agent deployment to development environment failed"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback:
+    name: Rollback on Failure
+    needs: [deploy-backend, deploy-web, smoke-tests]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: .
+
+      - name: Set deployment variables
+        run: echo "ECS_CLUSTER=$(jq -r .ecs_cluster_name.value tf-outputs.json)" >> $GITHUB_ENV
+
+      - name: Rollback backend deployment
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service backend-service --task-definition backend-service:PREVIOUS
+
+      - name: Rollback web deployment
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service web-service --task-definition web-service:PREVIOUS
+
+      - name: Wait for services to stabilize
+        run: aws ecs wait services-stable --cluster $ECS_CLUSTER --services backend-service web-service
+
+      - name: Send rollback notification
+        run: curl -X POST -H 'Content-type: application/json' --data '{"text":"⚠️ Deployment to development environment failed - rollback completed"}' ${{ secrets.SLACK_WEBHOOK_URL }}
